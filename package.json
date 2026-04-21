@@ -20,6 +20,14 @@
     "mysql2": "^3.22.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.0"
-  }
+    "nodemon": "^3.1.14"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vivianelemes7-rr/ipf.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vivianelemes7-rr/ipf/issues"
+  },
+  "homepage": "https://github.com/vivianelemes7-rr/ipf#readme"
 }
