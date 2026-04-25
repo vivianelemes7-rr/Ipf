@@ -1,4 +1,4 @@
-const CRMComercialService = require('../services/crmComercialService');
+const CRMComercialService = require('../services/crm_comercialService');
 
 class CRMComercialController {
     // Lista todos os cards ou filtra por vendedor

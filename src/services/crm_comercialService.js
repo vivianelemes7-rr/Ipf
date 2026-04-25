@@ -1,4 +1,4 @@
-const CRMComercialModel = require("../models/crmComercialModel");
+const CRMComercialModel = require("../models/crm_comercialModel");
 
 class CRMComercialService {
     // Busca todos os cards do CRM

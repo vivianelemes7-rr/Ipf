@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const CRMComercialController = require('../controllers/crmComercialController');
+const CRMComercialController = require('../controllers/crm_comercialController');
 
 // Rotas do CRM Comercial
 
