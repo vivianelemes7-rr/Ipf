@@ -35,9 +35,8 @@ CREATE TABLE permissoes (
     ultima_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2. Criar Tabelas CRM VENDEDORES--
+-- 2. Criar Tabelas CRM COMERCIAL--
 -- 2.1. Tabela CRM COMERCIAL:
-
 CREATE TABLE crm_comercial (
     id SERIAL PRIMARY KEY,
     lead_id INT REFERENCES leads(id) ON DELETE CASCADE,
@@ -231,3 +230,6 @@ CREATE TABLE notificacoes_producao (
     lida BOOLEAN DEFAULT FALSE,
     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+
+Se der tempo, verificar a criação de uma tabela de Leads Arquivados que se conectará com  convertido com a tabela de Lead  BOOLEAN DEFAULT FALSE,  -- Identifica se virou venda/pedido
