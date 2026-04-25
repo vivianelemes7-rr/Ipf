@@ -18,8 +18,8 @@ CREATE TABLE funcionarios (
 
 -- 1.2. Tabela PERMISSÕES:
 CREATE TABLE permissoes (
-    id SERIAL PRIMARY KEY,
-    funcionario_id INT REFERENCES funcionarios(id) ON DELETE CASCADE,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    funcionario_id BIGINT UNSIGNED,
     
     -- Missões por Módulo
     modulo_vendas BOOLEAN DEFAULT FALSE,
@@ -32,18 +32,23 @@ CREATE TABLE permissoes (
     pode_deletar BOOLEAN DEFAULT FALSE, -- Pode excluir leads/projetos?
     ver_apenas_proprio BOOLEAN DEFAULT TRUE, -- Se TRUE, vendedor só vê seus próprios leads
     
-    ultima_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ultima_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_funcionario_permissoes 
+        FOREIGN KEY (funcionario_id) 
+        REFERENCES funcionarios(id) 
+        ON DELETE CASCADE
 );
 
 -- 2. Criar Tabelas CRM COMERCIAL--
 -- 2.1. Tabela CRM COMERCIAL:
 CREATE TABLE crm_comercial (
     id SERIAL PRIMARY KEY,
-    lead_id INT REFERENCES leads(id) ON DELETE CASCADE,
-    vendedor_id INT, -- FK para a tabela do Ricardo (Funcionários)
+    lead_id INT NOT NULL,
+    vendedor_id BIGINT UNSIGNED, -- FK para a tabela do Ricardo (Funcionários)
     
     -- Campos do Kanban
-    etapa_kanban VARCHAR(50) DEFAULT 'Triagem', -- Triagem, Primeiro Contato, Proposta, Negociação
+    etapa_kanban VARCHAR(50) DEFAULT 'Novo', -- Novo, Primeiro Contato, Proposta, Negociação
     valor_estimado DECIMAL(10, 2),
     prioridade INT DEFAULT 2, -- 1: Alta, 2: Média, 3: Baixa
     previsao_fechamento DATE,
@@ -51,12 +56,24 @@ CREATE TABLE crm_comercial (
     
     -- Lógica de Fechamento
     status_final VARCHAR(20) DEFAULT 'Em Aberto', -- Ganho, Perdido, Pausado, Em Aberto
-    data_ganho TIMESTAMP,
+    data_ganho TIMESTAMP NULL,
     motivo_perda TEXT,
     pedido_gerado BOOLEAN DEFAULT FALSE, -- Flag para seu código Node.js criar o Pedido
+    numero_pedido VARCHAR(50) UNIQUE AFTER pedido_gerado, -- Gerado manualmente ou por sistema externo
     
-    data_movimentacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    data_movimentacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     observacoes_venda TEXT
+
+    -- Definição das Chaves Estrangeiras (Constraints)
+    CONSTRAINT fk_lead_crm 
+        FOREIGN KEY (lead_id) 
+        REFERENCES leads(id) 
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_vendedor_crm 
+        FOREIGN KEY (vendedor_id) 
+        REFERENCES funcionarios(id) 
+        ON DELETE SET NULL
 );
 
 -- 2.2. Tabela LEADS:
