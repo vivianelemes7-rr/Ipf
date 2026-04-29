@@ -44,8 +44,8 @@ CREATE TABLE permissoes (
 -- 2.1. Tabela CRM COMERCIAL:
 CREATE TABLE crm_comercial (
     id SERIAL PRIMARY KEY,
-    lead_id INT NOT NULL,
-    vendedor_id BIGINT UNSIGNED, -- FK para a tabela do Ricardo (Funcionários)
+    lead_id BIGINT UNSIGNED NOT NULL,
+    vendedor_id BIGINT UNSIGNED, -- FK para a tabela(Funcionários)
     
     -- Campos do Kanban
     etapa_kanban VARCHAR(50) DEFAULT 'Novo', -- Novo, Primeiro Contato, Proposta, Negociação
@@ -56,12 +56,12 @@ CREATE TABLE crm_comercial (
     
     -- Lógica de Fechamento
     status_final VARCHAR(20) DEFAULT 'Em Aberto', -- Ganho, Perdido, Pausado, Em Aberto
-    data_ganho TIMESTAMP NULL,
+    data_ganho DATETIME NULL,
     motivo_perda TEXT,
     pedido_gerado BOOLEAN DEFAULT FALSE, -- Flag para seu código Node.js criar o Pedido
-    numero_pedido VARCHAR(50) UNIQUE AFTER pedido_gerado, -- Gerado manualmente ou por sistema externo
+    numero_pedido VARCHAR(50) UNIQUE, -- Gerado manualmente ou por sistema externo
     
-    data_movimentacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    data_movimentacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     observacoes_venda TEXT
 
     -- Definição das Chaves Estrangeiras (Constraints)
@@ -74,7 +74,7 @@ CREATE TABLE crm_comercial (
         FOREIGN KEY (vendedor_id) 
         REFERENCES funcionarios(id) 
         ON DELETE SET NULL
-);
+)ENGINE=InnoDB;
 
 -- 2.2. Tabela LEADS:
 CREATE TABLE leads (

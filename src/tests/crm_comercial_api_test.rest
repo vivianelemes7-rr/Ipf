@@ -1,0 +1,80 @@
+### Configurações Iniciais
+@baseURL = http://localhost:3000/api/crm
+@id_do_card = 1
+@vendedor_id = 1
+
+### 1. Listar todos os cards do Kanban
+GET {{baseURL}}/
+Accept: application/json
+
+### 2. Listar cards de um vendedor específico
+GET {{baseURL}}/?vendedor_id={{vendedor_id}}
+Accept: application/json
+
+### 3. Criar um novo card no CRM (Lead entrando no funil)
+POST {{baseURL}}/
+Content-Type: application/json
+
+{
+    "lead_id": 10,
+    "vendedor_id": 1,
+    "etapa_kanban": "Novo",
+    "valor_estimado": 5500.00,
+    "prioridade": 2,
+    "observacoes_venda": "Cliente interessado em automação residencial."
+}
+
+### 4. Criar card sem lead_id (Erro esperado)
+POST {{baseURL}}/
+Content-Type: application/json
+
+{
+    "vendedor_id": 1,
+    "etapa_kanban": "Primeiro Contato"
+}
+
+### 5. Atualizar dados do card (Movimentação de etapa)
+PUT {{baseURL}}/{{id_do_card}}
+Content-Type: application/json
+
+{
+    "etapa_kanban": "Proposta",
+    "valor_estimado": 6000.00,
+    "vendedor_id": 1
+}
+
+### 6. Finalizar Venda como GANHA (Gera Pedido)
+PATCH {{baseURL}}/{{id_do_card}}/ganho
+Content-Type: application/json
+
+{
+    "numero_pedido": "PED-2026-001"
+}
+
+### 7. Finalizar com Número de Pedido Duplicado (Erro esperado)
+PATCH {{baseURL}}/99/ganho
+Content-Type: application/json
+
+{
+    "numero_pedido": "PED-2026-001"
+}
+
+### 8. Marcar Lead como PERDIDO
+PATCH {{baseURL}}/{{id_do_card}}/perdido
+Content-Type: application/json
+
+{
+    "motivo_perda": "Cliente achou o valor acima do orçamento atual."
+}
+
+### 9. Marcar Perdido sem motivo (Erro esperado)
+PATCH {{baseURL}}/{{id_do_card}}/perdido
+Content-Type: application/json
+
+{
+    "motivo_perda": ""
+}
+
+### 10. Deletar um card do CRM
+DELETE {{baseURL}}/{{id_do_card}}
+Accept: application/json
