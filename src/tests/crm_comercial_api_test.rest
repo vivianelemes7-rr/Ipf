@@ -78,5 +78,3 @@ Content-Type: application/json
 ### 10. Deletar um card do CRM
 DELETE {{baseURL}}/{{id_do_card}}
 Accept: application/json
-
-Teste de commit
