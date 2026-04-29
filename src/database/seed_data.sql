@@ -19,9 +19,14 @@ INSERT INTO permissoes (funcionario_id, modulo_vendas, modulo_financeiro, modulo
 
 -- 2. Criar Dados Tabelas CRM COMERCIAL--
 -- 2.1. Dados Tabela CRM COMERCIAL:
-INSERT INTO crm_comercial (lead_id, vendedor_id, etapa_kanban, valor_estimado, status_final, pedido_gerado) VALUES
-(1, 1, 'Negociação', 15500.00, 'Ganho', TRUE),
-(2, 1, 'Proposta', 8200.00, 'Em Aberto', FALSE);
+INSERT INTO crm_comercial (lead_id, vendedor_id, etapa_kanban, valor_estimado, status_final, pedido_gerado, data_ganho, numero_pedido, data_movimentacao ) VALUES
+(1, 1, 'Negociação', 15500.00, 'Ganho', TRUE, CURRENT_TIMESTAMP, 'PV-2026-0001', CURRENT_TIMESTAMP),
+(2, 1, 'Proposta', 8200.00, 'Em Aberto', FALSE, NULL, NULL, CURRENT_TIMESTAMP);
+
+-- Envelhecer um lead no crm_comercial para testar notificações de alerta:
+UPDATE crm_comercial 
+SET data_movimentacao = DATE_SUB(NOW(), INTERVAL 5 DAY), status_final = 'Em Aberto'
+WHERE id = 1;
 
 -- 2.2. Dados Tabela LEADS:
 INSERT INTO leads (nome_contato, empresa, cpf_cnpj, telefone, email, endereco_completo, origem, status_lead, convertido) VALUES

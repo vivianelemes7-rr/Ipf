@@ -3,7 +3,7 @@ const db = require('../config/database'); // Importa a conexão pool
 class CRMComercialModel {
     // Busca todos os registros do CRM com nomes de referências (Lead e Vendedor)
     static async findAll() {
-        const query = `SELECT crm.*, l.nome AS lead_nome, f.nome AS vendedor_nome 
+        const query = `SELECT crm.*, l.nome_contato AS lead_nome, f.nome AS vendedor_nome 
             FROM crm_comercial crm
             LEFT JOIN leads l ON crm.lead_id = l.id
             LEFT JOIN funcionarios f ON crm.vendedor_id = f.id
@@ -15,7 +15,7 @@ class CRMComercialModel {
     // Busca registros filtrados por vendedor (Respeitando a regra 'ver_apenas_proprio')
     static async findByVendedor(vendedor_id) {
         const query = `
-            SELECT crm.*, l.nome AS lead_nome 
+            SELECT crm.*, l.nome_contato AS lead_nome 
             FROM crm_comercial crm
             LEFT JOIN leads l ON crm.lead_id = l.id
             WHERE crm.vendedor_id = ?
@@ -27,7 +27,7 @@ class CRMComercialModel {
     // Busca um registro pelo número único do pedido
     static async findByNumeroPedido(numero_pedido) {
         const query = `
-            SELECT crm.*, l.nome AS lead_nome, f.nome AS vendedor_nome 
+            SELECT crm.*, l.nome_contato AS lead_nome, f.nome AS vendedor_nome 
             FROM crm_comercial crm
             LEFT JOIN leads l ON crm.lead_id = l.id
             LEFT JOIN funcionarios f ON crm.vendedor_id = f.id
@@ -35,6 +35,21 @@ class CRMComercialModel {
         `;
         const [rows] = await db.query(query, [numero_pedido]);
         return rows[0];
+    }
+
+    static async findIdleLeads(diasLimite = 2) {
+        const query = `
+            SELECT crm.id,
+                   crm.vendedor_id,
+                   crm.etapa_kanban,
+                   l.nome_contato
+            FROM crm_comercial crm
+            JOIN leads l ON crm.lead_id = l.id
+            WHERE crm.status_final = 'Em Aberto'
+              AND crm.data_movimentacao < DATE_SUB(NOW(), INTERVAL ? DAY)
+        `;
+        const [rows] = await db.query(query, [diasLimite]);
+        return rows;
     }
 
     static async findById(id) {

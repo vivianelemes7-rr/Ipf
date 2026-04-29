@@ -80,3 +80,4 @@ DELETE {{baseURL}}/{{id_do_card}}
 Accept: application/json
 
 Vamos corrigir!
+Accept: application/json
