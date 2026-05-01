@@ -48,10 +48,14 @@
 
 .login-form-side {
   flex: 1.2;
-  padding: 50px;
+  padding: 28px 64px 10px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
+}
+
+.login-box {
+  width: 100%;
 }
 
 .login-box h2 {
@@ -62,12 +66,12 @@
 
 .subtitle {
   color: var(--ipf-gray);
-  margin-bottom: 30px;
+  margin-bottom: 18px;
   font-size: 0.9rem;
 }
 
 .input-group {
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
 .input-group label {
@@ -99,7 +103,7 @@
   display: flex;
   justify-content: center;
   font-size: 0.8rem;
-  margin-bottom: 25px;
+  margin-bottom: 14px;
 }
 
 .form-options a {
@@ -125,7 +129,7 @@
 }
 
 .footer-links {
-  margin-top: 25px;
+  margin-top: 14px;
   text-align: center;
   font-size: 0.85rem;
 }
@@ -145,5 +149,9 @@
   .login-login-container {
     width: 95%;
     height: auto;
+  }
+
+  .login-form-side {
+    padding: 72px 28px;
   }
 }
