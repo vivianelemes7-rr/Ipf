@@ -34,25 +34,6 @@ export default function Cadastro() {
                 <div className="col-md-7 col-lg-6">
                     <div className="card shadow-sm">
                         <div className="card-body p-4">
-                            <div className="d-flex justify-content-end mb-3">
-                                <button
-                                    type="button"
-                                    className="btn btn-outline-primary me-2"
-                                    onClick={() => navegar('/alterar-senha')}
-                                >
-                                    Alterar senha
-                                </button>
-                                <button
-                                    type="button"
-                                    className="btn btn-outline-danger"
-                                    onClick={() => {
-                                        sair();
-                                        navegar('/');
-                                    }}
-                                >
-                                    Sair
-                                </button>
-                            </div>
                             <h2 className="card-title text-center mb-4">Cadastro de Usuário</h2>
                             <form onSubmit={aoEnviar}>
                                 <div className="mb-3">
