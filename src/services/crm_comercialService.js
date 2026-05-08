@@ -1,19 +1,17 @@
 const CRMComercialModel = require("../models/crm_comercialModel");
+const VendaModel = require("../models/vendaModel");
+const ProducaoModel = require("../models/producaoModel");
 
 class CRMComercialService {
-    // Busca todos os cards do CRM
     static async getAllCards() {
         return await CRMComercialModel.findAll();
     }
 
-    // Busca cards de um vendedor específico (respeitando a regra do funcionários)
     static async getCardsByVendedor(vendedorId) {
         return await CRMComercialModel.findByVendedor(vendedorId);
     }
 
-    // Cria um novo card com validações iniciais
     static async createCard(dados) {
-        // Se um número de pedido for enviado na criação, verifica se já existe
         if (dados.numero_pedido) {
             const existingPedido = await CRMComercialModel.findByNumeroPedido(dados.numero_pedido);
             if (existingPedido) {
@@ -21,7 +19,6 @@ class CRMComercialService {
             }
         }
 
-        // Validação simples: um lead_id é obrigatório para iniciar no CRM
         if (!dados.lead_id) {
             throw new Error("O ID do Lead é obrigatório para iniciar um card no CRM.");
         }
@@ -29,54 +26,41 @@ class CRMComercialService {
         return await CRMComercialModel.create(dados);
     }
 
-    // Atualiza o card e trata o erro de ID inexistente
-    static async updateCard(id, dados) {
-        const updatedRows = await CRMComercialModel.update(id, dados);
-        if (updatedRows === 0) {
-            throw new Error("Registro no CRM não encontrado.");
-        }
-        return updatedRows;
-    }
-
-    // Lógica de negócio para fechar venda (Ganho)
-    static async finalizeWinningSale(id, numeroPedido) {
-        if (!numeroPedido) {
+    static async finalizeWinningSale(id, numero_pedido) {
+        if (!numero_pedido) {
             throw new Error("É necessário informar o número do pedido para finalizar a venda.");
         }
 
-        // Verifica se esse número de pedido já foi usado em outro card
-        const existingPedido = await CRMComercialModel.findByNumeroPedido(numeroPedido);
+        const existingPedido = await CRMComercialModel.findByNumeroPedido(numero_pedido);
         if (existingPedido && existingPedido.id !== parseInt(id)) {
             throw new Error("Este número de pedido já foi utilizado em outra negociação.");
         }
 
-        const updatedRows = await CRMComercialModel.markAsWon(id, numeroPedido);
-        if (updatedRows === 0) {
-            throw new Error("Não foi possível finalizar a venda. Registro não encontrado.");
+        // 1. Marca como Ganho no CRM
+        const updatedRows = await CRMComercialModel.markAsWon(id, numero_pedido);
+        
+        if (updatedRows > 0) {
+            // 2. Busca os dados do card para transferir para a Venda
+            const card = await CRMComercialModel.findById(id);
+            
+            // 3. CRIAÇÃO DA VENDA (Conexão com setor de Projetos/Arquitetura)
+            await VendaModel.criarDaLead(card.lead_id, card.observacoes_venda || 'Pedido gerado via CRM');
+            
+            // 4. Aqui podemos adicionar a  chamada para a Produção futuramente
         }
+
         return updatedRows;
     }
 
-    // Lógica para marcar como perdido
     static async finalizeLostSale(id, motivo) {
         if (!motivo || motivo.trim() === "") {
             throw new Error("É necessário informar o motivo da perda.");
         }
-
-        const updatedRows = await CRMComercialModel.markAsLost(id, motivo);
-        if (updatedRows === 0) {
-            throw new Error("Registro não encontrado.");
-        }
-        return updatedRows;
+        return await CRMComercialModel.markAsLost(id, motivo);
     }
 
-    // Deleta o card
     static async deleteCard(id) {
-        const deletedRows = await CRMComercialModel.delete(id);
-        if (deletedRows === 0) {
-            throw new Error("Registro no CRM não encontrado.");
-        }
-        return deletedRows;
+        return await CRMComercialModel.delete(id);
     }
 }
 

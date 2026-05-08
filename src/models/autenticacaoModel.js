@@ -1,4 +1,4 @@
-const conexao = require('../config/ipfdb');
+const conexao = require('../config/database');
 
 const AutenticacaoModel = {
     async buscarPorEmailParaLogin(email) {
