@@ -15,6 +15,7 @@ import AlterarSenha from './AlterarSenha.jsx'
 import Clientes from './Clientes.jsx'
 import Vendedores from './Vendedores.jsx'
 import Kanban from './Kanban.jsx'
+import NotificacaoKanban from './notificacaoKanban.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -30,6 +31,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/clientes" element={<Clientes />} />
         <Route path="/vendedores" element={<Vendedores />} />
         <Route path="/kanban" element={<Kanban />} />
+        <Route path="/notificacao-kanban" element={<NotificacaoKanban />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,
