@@ -8,6 +8,11 @@ import {
     atualizarColunaCardKanban,
     criarCardKanban,
 } from './services/kanbanService';
+import {
+    obterPapeisComAcessoAoQuadro,
+    registrarNotificacaoMudancaEstado,
+    verificarNotificacoesInatividade,
+} from './services/notificacaoKanbanService';
 import { obterPapelUsuarioAtual } from './services/sessionService';
 import { sair } from './services/authService';
 
@@ -98,6 +103,25 @@ export default function Kanban() {
         }, {});
     }, [colunasQuadro, cardsFiltrados]);
 
+    const mapaTitulosColunas = useMemo(
+        () => Object.fromEntries(colunasQuadro.map((coluna) => [coluna.id, coluna.title])),
+        [colunasQuadro]
+    );
+
+    useEffect(() => {
+        if (!chaveQuadroAtual || !quadroAtual) return;
+
+        const cardsQuadro = cardsPorQuadro[chaveQuadroAtual] || [];
+        const papeisDestino = obterPapeisComAcessoAoQuadro(chaveQuadroAtual);
+
+        verificarNotificacoesInatividade({
+            chaveQuadro: chaveQuadroAtual,
+            tituloQuadro: quadroAtual.title,
+            cards: cardsQuadro,
+            papeisDestino,
+        });
+    }, [cardsPorQuadro, chaveQuadroAtual, quadroAtual]);
+
     if (!temAcessoKanban) {
         return <Navigate to="/dashboard" replace />;
     }
@@ -125,6 +149,19 @@ export default function Kanban() {
         if (idArrastando === null) return;
 
         const idCardMovido = idArrastando;
+        const cardsQuadroAtual = cardsPorQuadro[chaveQuadroAtual] || [];
+        const cardMovido = cardsQuadroAtual.find((card) => card.id === idCardMovido);
+        if (!cardMovido) {
+            definirIdArrastando(null);
+            return;
+        }
+
+        if (cardMovido.columnId === idColuna) {
+            definirIdArrastando(null);
+            return;
+        }
+
+        const colunaOrigem = cardMovido.columnId;
         const dataAtualizacao = new Date().toISOString();
         definirCardsPorQuadro((anterior) => ({
             ...anterior,
@@ -140,6 +177,22 @@ export default function Kanban() {
             ),
         }));
         definirIdArrastando(null);
+
+        const papeisDestino = obterPapeisComAcessoAoQuadro(chaveQuadroAtual);
+        registrarNotificacaoMudancaEstado({
+            chaveQuadro: chaveQuadroAtual,
+            tituloQuadro: quadroAtual.title,
+            card: {
+                ...cardMovido,
+                columnId: idColuna,
+                updatedAt: dataAtualizacao,
+            },
+            colunaOrigem,
+            colunaDestino: idColuna,
+            mapaColunas: mapaTitulosColunas,
+            perfilAtor,
+            papeisDestino,
+        });
 
         await atualizarColunaCardKanban(chaveQuadroAtual, idCardMovido, idColuna, {
             updatedByProfile: perfilAtor,
@@ -255,6 +308,15 @@ export default function Kanban() {
                     onClick={() => navegar(-1)}
                 >
                     <i className="fas fa-arrow-left" aria-hidden="true" />
+                </button>
+                <button
+                    type="button"
+                    className="sidebar-action"
+                    title="Notificacoes"
+                    aria-label="Ir para notificacoes do kanban"
+                    onClick={() => navegar('/notificacao-kanban')}
+                >
+                    <i className="fas fa-bell" aria-hidden="true" />
                 </button>
             </aside>
 
