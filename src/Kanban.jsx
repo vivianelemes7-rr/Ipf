@@ -7,6 +7,8 @@ import {
     listarQuadrosKanban,
     atualizarColunaCardKanban,
     criarCardKanban,
+    atualizarCardKanban,
+    excluirCardKanban,
 } from './services/kanbanService';
 import {
     obterPapeisComAcessoAoQuadro,
@@ -17,6 +19,15 @@ import { obterPapelUsuarioAtual } from './services/sessionService';
 import { sair } from './services/authService';
 
 const FORMULARIO_CARD_INICIAL = {
+    columnId: '',
+    title: '',
+    seller: '',
+    details: '',
+    footer: '',
+};
+
+const FORMULARIO_EDICAO_CARD_INICIAL = {
+    id: null,
     columnId: '',
     title: '',
     seller: '',
@@ -45,6 +56,12 @@ export default function Kanban() {
     const [dadosNovoCard, definirDadosNovoCard] = useState(FORMULARIO_CARD_INICIAL);
     const [erroNovoCard, definirErroNovoCard] = useState('');
     const [salvandoNovoCard, definirSalvandoNovoCard] = useState(false);
+    const [mostrarFormularioEdicaoCard, definirMostrarFormularioEdicaoCard] = useState(false);
+    const [dadosEdicaoCard, definirDadosEdicaoCard] = useState(FORMULARIO_EDICAO_CARD_INICIAL);
+    const [erroEdicaoCard, definirErroEdicaoCard] = useState('');
+    const [salvandoEdicaoCard, definirSalvandoEdicaoCard] = useState(false);
+    const [excluindoCardId, definirExcluindoCardId] = useState(null);
+    const [erroAcaoCard, definirErroAcaoCard] = useState('');
     const navegar = useNavigate();
 
     useEffect(() => {
@@ -232,6 +249,7 @@ export default function Kanban() {
     const aoSalvarNovoCard = async (evento) => {
         evento.preventDefault();
         definirErroNovoCard('');
+        definirErroAcaoCard('');
 
         if (!dadosNovoCard.columnId) {
             definirErroNovoCard('Selecione a coluna inicial do card.');
@@ -290,6 +308,145 @@ export default function Kanban() {
 
         definirSalvandoNovoCard(false);
         fecharFormularioNovoCard();
+    };
+
+    const abrirFormularioEdicaoCard = (card) => {
+        definirErroEdicaoCard('');
+        definirErroAcaoCard('');
+        definirDadosEdicaoCard({
+            id: card.id,
+            columnId: card.columnId || colunasQuadro[0]?.id || '',
+            title: card.title || '',
+            seller: card.seller || '',
+            details: (card.lines || []).join('\n'),
+            footer: card.footer || '',
+        });
+        definirMostrarFormularioEdicaoCard(true);
+    };
+
+    const fecharFormularioEdicaoCard = () => {
+        definirMostrarFormularioEdicaoCard(false);
+        definirErroEdicaoCard('');
+        definirDadosEdicaoCard(FORMULARIO_EDICAO_CARD_INICIAL);
+    };
+
+    const aoAlterarEdicaoCard = (evento) => {
+        const { name, value } = evento.target;
+        definirDadosEdicaoCard((anterior) => ({ ...anterior, [name]: value }));
+    };
+
+    const aoSalvarEdicaoCard = async (evento) => {
+        evento.preventDefault();
+        definirErroEdicaoCard('');
+        definirErroAcaoCard('');
+
+        if (!dadosEdicaoCard.id) {
+            definirErroEdicaoCard('Card invalido para edicao.');
+            return;
+        }
+
+        if (!dadosEdicaoCard.columnId) {
+            definirErroEdicaoCard('Selecione a coluna do card.');
+            return;
+        }
+
+        if (!dadosEdicaoCard.title.trim()) {
+            definirErroEdicaoCard('Informe o titulo do card.');
+            return;
+        }
+
+        const linhasDetalhes = dadosEdicaoCard.details
+            .split('\n')
+            .map((linha) => linha.trim())
+            .filter(Boolean);
+
+        if (!linhasDetalhes.length) {
+            definirErroEdicaoCard('Adicione pelo menos uma linha de detalhe.');
+            return;
+        }
+
+        const cardsQuadroAtual = cardsPorQuadro[chaveQuadroAtual] || [];
+        const cardOriginal = cardsQuadroAtual.find((card) => card.id === dadosEdicaoCard.id);
+        if (!cardOriginal) {
+            definirErroEdicaoCard('Card nao encontrado para edicao.');
+            return;
+        }
+
+        const dataAtualizacao = new Date().toISOString();
+        const cardAtualizado = {
+            ...cardOriginal,
+            columnId: dadosEdicaoCard.columnId,
+            title: dadosEdicaoCard.title.trim(),
+            seller: dadosEdicaoCard.seller.trim() || 'Nao informado',
+            lines: linhasDetalhes,
+            footer: dadosEdicaoCard.footer.trim(),
+            updatedByProfile: perfilAtor,
+            updatedAt: dataAtualizacao,
+        };
+
+        definirSalvandoEdicaoCard(true);
+        definirCardsPorQuadro((anterior) => ({
+            ...anterior,
+            [chaveQuadroAtual]: (anterior[chaveQuadroAtual] || []).map((card) =>
+                card.id === cardOriginal.id ? cardAtualizado : card
+            ),
+        }));
+
+        const resposta = await atualizarCardKanban(chaveQuadroAtual, cardOriginal.id, {
+            columnId: cardAtualizado.columnId,
+            title: cardAtualizado.title,
+            seller: cardAtualizado.seller,
+            lines: cardAtualizado.lines,
+            footer: cardAtualizado.footer,
+            updatedByProfile: cardAtualizado.updatedByProfile,
+            updatedAt: cardAtualizado.updatedAt,
+        });
+
+        if (resposta?.success === false) {
+            definirCardsPorQuadro((anterior) => ({
+                ...anterior,
+                [chaveQuadroAtual]: (anterior[chaveQuadroAtual] || []).map((card) =>
+                    card.id === cardOriginal.id ? cardOriginal : card
+                ),
+            }));
+            definirErroEdicaoCard(resposta.message || 'Nao foi possivel salvar as alteracoes do card.');
+            definirSalvandoEdicaoCard(false);
+            return;
+        }
+
+        definirSalvandoEdicaoCard(false);
+        fecharFormularioEdicaoCard();
+    };
+
+    const aoExcluirCard = async (cardId) => {
+        definirErroAcaoCard('');
+
+        const cardsQuadroAtual = cardsPorQuadro[chaveQuadroAtual] || [];
+        const cardExcluido = cardsQuadroAtual.find((card) => card.id === cardId);
+        if (!cardExcluido) {
+            definirErroAcaoCard('Card nao encontrado para exclusao.');
+            return;
+        }
+
+        const confirmarExclusao = window.confirm(`Deseja excluir o card \"${cardExcluido.title}\"?`);
+        if (!confirmarExclusao) return;
+
+        definirExcluindoCardId(cardId);
+        definirCardsPorQuadro((anterior) => ({
+            ...anterior,
+            [chaveQuadroAtual]: (anterior[chaveQuadroAtual] || []).filter((card) => card.id !== cardId),
+        }));
+
+        const resposta = await excluirCardKanban(chaveQuadroAtual, cardId);
+        if (resposta?.success === false) {
+            definirCardsPorQuadro((anterior) => ({
+                ...anterior,
+                [chaveQuadroAtual]: [...(anterior[chaveQuadroAtual] || []), cardExcluido],
+            }));
+            definirErroAcaoCard(resposta.message || 'Nao foi possivel excluir o card.');
+        }
+
+        definirExcluindoCardId(null);
     };
 
     const larguraMinimaColunas = Math.max(900, colunasQuadro.length * 220);
@@ -366,6 +523,12 @@ export default function Kanban() {
                     </p>
                 )}
 
+                {erroAcaoCard && (
+                    <p role="alert" style={{ color: '#b42318', marginBottom: '16px' }}>
+                        {erroAcaoCard}
+                    </p>
+                )}
+
                 {tipoLogin === 'administrador' && (
                     <div className="board-switcher" aria-label="Selecionar modelo de kanban">
                         {Object.entries(configuracoesQuadro).map(([chave, configuracao]) => (
@@ -424,6 +587,31 @@ export default function Kanban() {
                                                 </p>
                                             )}
                                             {card.footer && <small>{card.footer}</small>}
+                                            <div className="lead-card-actions">
+                                                <button
+                                                    type="button"
+                                                    className="lead-card-action-btn"
+                                                    onClick={(evento) => {
+                                                        evento.preventDefault();
+                                                        evento.stopPropagation();
+                                                        abrirFormularioEdicaoCard(card);
+                                                    }}
+                                                >
+                                                    Alterar
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="lead-card-action-btn lead-card-action-btn-danger"
+                                                    disabled={excluindoCardId === card.id}
+                                                    onClick={(evento) => {
+                                                        evento.preventDefault();
+                                                        evento.stopPropagation();
+                                                        aoExcluirCard(card.id);
+                                                    }}
+                                                >
+                                                    {excluindoCardId === card.id ? 'Excluindo...' : 'Excluir'}
+                                                </button>
+                                            </div>
                                         </article>
                                     ))}
                                 </div>
@@ -503,6 +691,80 @@ export default function Kanban() {
                                     </button>
                                     <button type="submit" className="new-os-btn" disabled={salvandoNovoCard}>
                                         {salvandoNovoCard ? 'Salvando...' : 'Salvar card'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+
+                {mostrarFormularioEdicaoCard && (
+                    <div className="kanban-modal-backdrop" role="presentation">
+                        <div className="kanban-modal" role="dialog" aria-modal="true" aria-label="Editar card">
+                            <h2>Editar card</h2>
+                            <p>Altere os campos necessarios e salve para atualizar o card.</p>
+
+                            <form className="kanban-modal-form" onSubmit={aoSalvarEdicaoCard}>
+                                <label htmlFor="edit-columnId">Coluna</label>
+                                <select
+                                    id="edit-columnId"
+                                    name="columnId"
+                                    value={dadosEdicaoCard.columnId}
+                                    onChange={aoAlterarEdicaoCard}
+                                    required
+                                >
+                                    <option value="" disabled>Selecione</option>
+                                    {colunasQuadro.map((coluna) => (
+                                        <option key={coluna.id} value={coluna.id}>{coluna.title}</option>
+                                    ))}
+                                </select>
+
+                                <label htmlFor="edit-title">Titulo</label>
+                                <input
+                                    id="edit-title"
+                                    name="title"
+                                    type="text"
+                                    value={dadosEdicaoCard.title}
+                                    onChange={aoAlterarEdicaoCard}
+                                    required
+                                />
+
+                                <label htmlFor="edit-seller">Vendedor/Responsavel</label>
+                                <input
+                                    id="edit-seller"
+                                    name="seller"
+                                    type="text"
+                                    value={dadosEdicaoCard.seller}
+                                    onChange={aoAlterarEdicaoCard}
+                                />
+
+                                <label htmlFor="edit-details">Detalhes (uma linha por item)</label>
+                                <textarea
+                                    id="edit-details"
+                                    name="details"
+                                    rows="4"
+                                    value={dadosEdicaoCard.details}
+                                    onChange={aoAlterarEdicaoCard}
+                                    required
+                                />
+
+                                <label htmlFor="edit-footer">Rodape</label>
+                                <input
+                                    id="edit-footer"
+                                    name="footer"
+                                    type="text"
+                                    value={dadosEdicaoCard.footer}
+                                    onChange={aoAlterarEdicaoCard}
+                                />
+
+                                {erroEdicaoCard && <p className="kanban-modal-error">{erroEdicaoCard}</p>}
+
+                                <div className="kanban-modal-actions">
+                                    <button type="button" className="kanban-header-btn" onClick={fecharFormularioEdicaoCard}>
+                                        Cancelar
+                                    </button>
+                                    <button type="submit" className="new-os-btn" disabled={salvandoEdicaoCard}>
+                                        {salvandoEdicaoCard ? 'Salvando...' : 'Salvar alteracoes'}
                                     </button>
                                 </div>
                             </form>
