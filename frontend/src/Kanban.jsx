@@ -1,0 +1,777 @@
+
+import { useEffect, useMemo, useState } from 'react';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
+import './Kanban.css';
+import { PAPEIS_PERMITIDOS, QUADRO_PADRAO_POR_PAPEL } from './config/roles';
+import {
+    listarQuadrosKanban,
+    atualizarColunaCardKanban,
+    criarCardKanban,
+    atualizarCardKanban,
+    excluirCardKanban,
+} from './services/kanbanService';
+import {
+    obterPapeisComAcessoAoQuadro,
+    registrarNotificacaoMudancaEstado,
+    verificarNotificacoesInatividade,
+} from './services/notificacaoKanbanService';
+import { obterPapelUsuarioAtual } from './services/sessionService';
+import { sair } from './services/authService';
+
+const FORMULARIO_CARD_INICIAL = {
+    columnId: '',
+    title: '',
+    seller: '',
+    details: '',
+    footer: '',
+};
+
+const FORMULARIO_EDICAO_CARD_INICIAL = {
+    id: null,
+    columnId: '',
+    title: '',
+    seller: '',
+    details: '',
+    footer: '',
+};
+
+export default function Kanban() {
+    const tipoLogin = obterPapelUsuarioAtual();
+    const perfilAtor = tipoLogin || 'desconhecido';
+    const temAcessoKanban = PAPEIS_PERMITIDOS.includes(tipoLogin);
+    const [quadroSelecionado, definirQuadroSelecionado] = useState(QUADRO_PADRAO_POR_PAPEL[tipoLogin] || 'arquitetura');
+    const [configuracoesQuadro, definirConfiguracoesQuadro] = useState({});
+    const [cardsPorQuadro, definirCardsPorQuadro] = useState({});
+    const [estaCarregando, definirEstaCarregando] = useState(true);
+    const [erroCarregamento, definirErroCarregamento] = useState('');
+
+    const chaveQuadroAtual = tipoLogin === 'administrador'
+        ? quadroSelecionado
+        : QUADRO_PADRAO_POR_PAPEL[tipoLogin];
+
+    const quadroAtual = configuracoesQuadro[chaveQuadroAtual];
+    const [busca, definirBusca] = useState('');
+    const [idArrastando, definirIdArrastando] = useState(null);
+    const [mostrarFormularioNovoCard, definirMostrarFormularioNovoCard] = useState(false);
+    const [dadosNovoCard, definirDadosNovoCard] = useState(FORMULARIO_CARD_INICIAL);
+    const [erroNovoCard, definirErroNovoCard] = useState('');
+    const [salvandoNovoCard, definirSalvandoNovoCard] = useState(false);
+    const [mostrarFormularioEdicaoCard, definirMostrarFormularioEdicaoCard] = useState(false);
+    const [dadosEdicaoCard, definirDadosEdicaoCard] = useState(FORMULARIO_EDICAO_CARD_INICIAL);
+    const [erroEdicaoCard, definirErroEdicaoCard] = useState('');
+    const [salvandoEdicaoCard, definirSalvandoEdicaoCard] = useState(false);
+    const [excluindoCardId, definirExcluindoCardId] = useState(null);
+    const [erroAcaoCard, definirErroAcaoCard] = useState('');
+    const navegar = useNavigate();
+
+    useEffect(() => {
+        let estaMontado = true;
+
+        async function carregarQuadros() {
+            definirEstaCarregando(true);
+            definirErroCarregamento('');
+
+            try {
+                const dados = await listarQuadrosKanban();
+                if (!estaMontado) return;
+
+                definirConfiguracoesQuadro(dados);
+                definirCardsPorQuadro(
+                    Object.fromEntries(
+                        Object.entries(dados).map(([chave, configuracao]) => [chave, configuracao.cards || []])
+                    )
+                );
+            } catch (erro) {
+                if (!estaMontado) return;
+                definirErroCarregamento(erro.message || 'Nao foi possivel carregar o kanban.');
+            } finally {
+                if (estaMontado) {
+                    definirEstaCarregando(false);
+                }
+            }
+        }
+
+        carregarQuadros();
+        return () => {
+            estaMontado = false;
+        };
+    }, []);
+
+    const colunasQuadro = useMemo(() => quadroAtual?.columns || [], [quadroAtual]);
+
+    const cardsFiltrados = useMemo(() => {
+        const termo = busca.trim().toLowerCase();
+        const cardsQuadro = cardsPorQuadro[chaveQuadroAtual] || [];
+        if (!termo) return cardsQuadro;
+
+        return cardsQuadro.filter((card) => {
+            const textoBusca = [card.title, ...(card.lines || []), card.footer, card.seller]
+                .filter(Boolean)
+                .join(' ')
+                .toLowerCase();
+            return textoBusca.includes(termo);
+        });
+    }, [cardsPorQuadro, chaveQuadroAtual, busca]);
+
+    const cardsAgrupados = useMemo(() => {
+        return colunasQuadro.reduce((acumulador, coluna) => {
+            acumulador[coluna.id] = cardsFiltrados.filter((card) => card.columnId === coluna.id);
+            return acumulador;
+        }, {});
+    }, [colunasQuadro, cardsFiltrados]);
+
+    const mapaTitulosColunas = useMemo(
+        () => Object.fromEntries(colunasQuadro.map((coluna) => [coluna.id, coluna.title])),
+        [colunasQuadro]
+    );
+
+    useEffect(() => {
+        if (!chaveQuadroAtual || !quadroAtual) return;
+
+        const cardsQuadro = cardsPorQuadro[chaveQuadroAtual] || [];
+        const papeisDestino = obterPapeisComAcessoAoQuadro(chaveQuadroAtual);
+
+        verificarNotificacoesInatividade({
+            chaveQuadro: chaveQuadroAtual,
+            tituloQuadro: quadroAtual.title,
+            cards: cardsQuadro,
+            papeisDestino,
+        });
+    }, [cardsPorQuadro, chaveQuadroAtual, quadroAtual]);
+
+    if (!temAcessoKanban) {
+        return <Navigate to="/dashboard" replace />;
+    }
+
+    if (estaCarregando) {
+        return (
+            <div className="kanban-page">
+                <main className="kanban-main">
+                    <header className="kanban-header">
+                        <div>
+                            <h1>Carregando kanban...</h1>
+                            <p>Aguarde enquanto os dados sao preparados.</p>
+                        </div>
+                    </header>
+                </main>
+            </div>
+        );
+    }
+
+    if (!quadroAtual) {
+        return <Navigate to="/dashboard" replace />;
+    }
+
+    const aoSoltarNaColuna = async (idColuna) => {
+        if (idArrastando === null) return;
+
+        const idCardMovido = idArrastando;
+        const cardsQuadroAtual = cardsPorQuadro[chaveQuadroAtual] || [];
+        const cardMovido = cardsQuadroAtual.find((card) => card.id === idCardMovido);
+        if (!cardMovido) {
+            definirIdArrastando(null);
+            return;
+        }
+
+        if (cardMovido.columnId === idColuna) {
+            definirIdArrastando(null);
+            return;
+        }
+
+        const colunaOrigem = cardMovido.columnId;
+        const dataAtualizacao = new Date().toISOString();
+        definirCardsPorQuadro((anterior) => ({
+            ...anterior,
+            [chaveQuadroAtual]: (anterior[chaveQuadroAtual] || []).map((card) =>
+                card.id === idCardMovido
+                    ? {
+                        ...card,
+                        columnId: idColuna,
+                        updatedByProfile: perfilAtor,
+                        updatedAt: dataAtualizacao,
+                    }
+                    : card
+            ),
+        }));
+        definirIdArrastando(null);
+
+        const papeisDestino = obterPapeisComAcessoAoQuadro(chaveQuadroAtual);
+        registrarNotificacaoMudancaEstado({
+            chaveQuadro: chaveQuadroAtual,
+            tituloQuadro: quadroAtual.title,
+            card: {
+                ...cardMovido,
+                columnId: idColuna,
+                updatedAt: dataAtualizacao,
+            },
+            colunaOrigem,
+            colunaDestino: idColuna,
+            mapaColunas: mapaTitulosColunas,
+            perfilAtor,
+            papeisDestino,
+        });
+
+        await atualizarColunaCardKanban(chaveQuadroAtual, idCardMovido, idColuna, {
+            updatedByProfile: perfilAtor,
+            updatedAt: dataAtualizacao,
+        });
+    };
+
+    const abrirFormularioNovoCard = () => {
+        definirErroNovoCard('');
+        definirDadosNovoCard({
+            ...FORMULARIO_CARD_INICIAL,
+            columnId: colunasQuadro[0]?.id || '',
+        });
+        definirMostrarFormularioNovoCard(true);
+    };
+
+    const fecharFormularioNovoCard = () => {
+        definirMostrarFormularioNovoCard(false);
+        definirErroNovoCard('');
+        definirDadosNovoCard(FORMULARIO_CARD_INICIAL);
+    };
+
+    const aoAlterarNovoCard = (evento) => {
+        const { name, value } = evento.target;
+        definirDadosNovoCard((anterior) => ({ ...anterior, [name]: value }));
+    };
+
+    const obterProximoIdCard = () => {
+        const idsExistentes = Object.values(cardsPorQuadro)
+            .flat()
+            .map((card) => Number(card.id))
+            .filter((id) => Number.isFinite(id));
+
+        return idsExistentes.length ? Math.max(...idsExistentes) + 1 : Date.now();
+    };
+
+    const aoSalvarNovoCard = async (evento) => {
+        evento.preventDefault();
+        definirErroNovoCard('');
+        definirErroAcaoCard('');
+
+        if (!dadosNovoCard.columnId) {
+            definirErroNovoCard('Selecione a coluna inicial do card.');
+            return;
+        }
+
+        if (!dadosNovoCard.title.trim()) {
+            definirErroNovoCard('Informe o titulo do card.');
+            return;
+        }
+
+        if (!dadosNovoCard.details.trim()) {
+            definirErroNovoCard('Informe os detalhes do card.');
+            return;
+        }
+
+        const linhasDetalhes = dadosNovoCard.details
+            .split('\n')
+            .map((linha) => linha.trim())
+            .filter(Boolean);
+
+        if (!linhasDetalhes.length) {
+            definirErroNovoCard('Adicione pelo menos uma linha de detalhe.');
+            return;
+        }
+
+        const idNovoCard = obterProximoIdCard();
+        const novoCard = {
+            id: idNovoCard,
+            columnId: dadosNovoCard.columnId,
+            title: dadosNovoCard.title.trim(),
+            lines: linhasDetalhes,
+            footer: dadosNovoCard.footer.trim(),
+            seller: dadosNovoCard.seller.trim() || 'Nao informado',
+            createdByProfile: perfilAtor,
+            updatedByProfile: perfilAtor,
+            updatedAt: new Date().toISOString(),
+        };
+
+        definirSalvandoNovoCard(true);
+        definirCardsPorQuadro((anterior) => ({
+            ...anterior,
+            [chaveQuadroAtual]: [...(anterior[chaveQuadroAtual] || []), novoCard],
+        }));
+
+        const resposta = await criarCardKanban(chaveQuadroAtual, novoCard);
+        if (resposta?.success === false) {
+            definirCardsPorQuadro((anterior) => ({
+                ...anterior,
+                [chaveQuadroAtual]: (anterior[chaveQuadroAtual] || []).filter((card) => card.id !== idNovoCard),
+            }));
+            definirErroNovoCard(resposta.message || 'Nao foi possivel criar o card.');
+            definirSalvandoNovoCard(false);
+            return;
+        }
+
+        definirSalvandoNovoCard(false);
+        fecharFormularioNovoCard();
+    };
+
+    const abrirFormularioEdicaoCard = (card) => {
+        definirErroEdicaoCard('');
+        definirErroAcaoCard('');
+        definirDadosEdicaoCard({
+            id: card.id,
+            columnId: card.columnId || colunasQuadro[0]?.id || '',
+            title: card.title || '',
+            seller: card.seller || '',
+            details: (card.lines || []).join('\n'),
+            footer: card.footer || '',
+        });
+        definirMostrarFormularioEdicaoCard(true);
+    };
+
+    const fecharFormularioEdicaoCard = () => {
+        definirMostrarFormularioEdicaoCard(false);
+        definirErroEdicaoCard('');
+        definirDadosEdicaoCard(FORMULARIO_EDICAO_CARD_INICIAL);
+    };
+
+    const aoAlterarEdicaoCard = (evento) => {
+        const { name, value } = evento.target;
+        definirDadosEdicaoCard((anterior) => ({ ...anterior, [name]: value }));
+    };
+
+    const aoSalvarEdicaoCard = async (evento) => {
+        evento.preventDefault();
+        definirErroEdicaoCard('');
+        definirErroAcaoCard('');
+
+        if (!dadosEdicaoCard.id) {
+            definirErroEdicaoCard('Card invalido para edicao.');
+            return;
+        }
+
+        if (!dadosEdicaoCard.columnId) {
+            definirErroEdicaoCard('Selecione a coluna do card.');
+            return;
+        }
+
+        if (!dadosEdicaoCard.title.trim()) {
+            definirErroEdicaoCard('Informe o titulo do card.');
+            return;
+        }
+
+        const linhasDetalhes = dadosEdicaoCard.details
+            .split('\n')
+            .map((linha) => linha.trim())
+            .filter(Boolean);
+
+        if (!linhasDetalhes.length) {
+            definirErroEdicaoCard('Adicione pelo menos uma linha de detalhe.');
+            return;
+        }
+
+        const cardsQuadroAtual = cardsPorQuadro[chaveQuadroAtual] || [];
+        const cardOriginal = cardsQuadroAtual.find((card) => card.id === dadosEdicaoCard.id);
+        if (!cardOriginal) {
+            definirErroEdicaoCard('Card nao encontrado para edicao.');
+            return;
+        }
+
+        const dataAtualizacao = new Date().toISOString();
+        const cardAtualizado = {
+            ...cardOriginal,
+            columnId: dadosEdicaoCard.columnId,
+            title: dadosEdicaoCard.title.trim(),
+            seller: dadosEdicaoCard.seller.trim() || 'Nao informado',
+            lines: linhasDetalhes,
+            footer: dadosEdicaoCard.footer.trim(),
+            updatedByProfile: perfilAtor,
+            updatedAt: dataAtualizacao,
+        };
+
+        definirSalvandoEdicaoCard(true);
+        definirCardsPorQuadro((anterior) => ({
+            ...anterior,
+            [chaveQuadroAtual]: (anterior[chaveQuadroAtual] || []).map((card) =>
+                card.id === cardOriginal.id ? cardAtualizado : card
+            ),
+        }));
+
+        const resposta = await atualizarCardKanban(chaveQuadroAtual, cardOriginal.id, {
+            columnId: cardAtualizado.columnId,
+            title: cardAtualizado.title,
+            seller: cardAtualizado.seller,
+            lines: cardAtualizado.lines,
+            footer: cardAtualizado.footer,
+            updatedByProfile: cardAtualizado.updatedByProfile,
+            updatedAt: cardAtualizado.updatedAt,
+        });
+
+        if (resposta?.success === false) {
+            definirCardsPorQuadro((anterior) => ({
+                ...anterior,
+                [chaveQuadroAtual]: (anterior[chaveQuadroAtual] || []).map((card) =>
+                    card.id === cardOriginal.id ? cardOriginal : card
+                ),
+            }));
+            definirErroEdicaoCard(resposta.message || 'Nao foi possivel salvar as alteracoes do card.');
+            definirSalvandoEdicaoCard(false);
+            return;
+        }
+
+        definirSalvandoEdicaoCard(false);
+        fecharFormularioEdicaoCard();
+    };
+
+    const aoExcluirCard = async (cardId) => {
+        definirErroAcaoCard('');
+
+        const cardsQuadroAtual = cardsPorQuadro[chaveQuadroAtual] || [];
+        const cardExcluido = cardsQuadroAtual.find((card) => card.id === cardId);
+        if (!cardExcluido) {
+            definirErroAcaoCard('Card nao encontrado para exclusao.');
+            return;
+        }
+
+        const confirmarExclusao = window.confirm(`Deseja excluir o card \"${cardExcluido.title}\"?`);
+        if (!confirmarExclusao) return;
+
+        definirExcluindoCardId(cardId);
+        definirCardsPorQuadro((anterior) => ({
+            ...anterior,
+            [chaveQuadroAtual]: (anterior[chaveQuadroAtual] || []).filter((card) => card.id !== cardId),
+        }));
+
+        const resposta = await excluirCardKanban(chaveQuadroAtual, cardId);
+        if (resposta?.success === false) {
+            definirCardsPorQuadro((anterior) => ({
+                ...anterior,
+                [chaveQuadroAtual]: [...(anterior[chaveQuadroAtual] || []), cardExcluido],
+            }));
+            definirErroAcaoCard(resposta.message || 'Nao foi possivel excluir o card.');
+        }
+
+        definirExcluindoCardId(null);
+    };
+
+    const larguraMinimaColunas = Math.max(900, colunasQuadro.length * 220);
+
+    return (
+        <div className="kanban-page">
+            <aside className="kanban-sidebar" aria-label="Acessos rapidos">
+                <Link to="/dashboard" className="sidebar-action" title="Dashboard" aria-label="Ir para dashboard">
+                    <i className="fas fa-home" aria-hidden="true" />
+                </Link>
+                <button
+                    type="button"
+                    className="sidebar-action"
+                    title="Voltar"
+                    aria-label="Voltar para pagina anterior"
+                    onClick={() => navegar(-1)}
+                >
+                    <i className="fas fa-arrow-left" aria-hidden="true" />
+                </button>
+                <button
+                    type="button"
+                    className="sidebar-action"
+                    title="Notificacoes"
+                    aria-label="Ir para notificacoes do kanban"
+                    onClick={() => navegar('/notificacao-kanban')}
+                >
+                    <i className="fas fa-bell" aria-hidden="true" />
+                </button>
+            </aside>
+
+            <main className="kanban-main">
+                <header className="kanban-header">
+                    <div>
+                        <h1>{quadroAtual.title}</h1>
+                        <p>{quadroAtual.description}</p>
+                    </div>
+
+                    <div className="kanban-tools">
+                        <button
+                            type="button"
+                            className="kanban-header-btn"
+                            onClick={() => navegar('/alterar-senha')}
+                        >
+                            Alterar senha
+                        </button>
+                        <button
+                            type="button"
+                            className="kanban-header-btn kanban-header-btn-danger"
+                            onClick={() => {
+                                sair();
+                                navegar('/');
+                            }}
+                        >
+                            Sair
+                        </button>
+                        <label className="search-input" aria-label="Buscar ordem de servico">
+                            <i className="fas fa-search" aria-hidden="true" />
+                            <input
+                                type="text"
+                                value={busca}
+                                placeholder="Buscar card..."
+                                onChange={(evento) => definirBusca(evento.target.value)}
+                            />
+                        </label>
+                        <button type="button" className="new-os-btn" onClick={abrirFormularioNovoCard}>
+                            + Novo card
+                        </button>
+                    </div>
+                </header>
+
+                {erroCarregamento && (
+                    <p role="alert" style={{ color: '#b42318', marginBottom: '16px' }}>
+                        {erroCarregamento}
+                    </p>
+                )}
+
+                {erroAcaoCard && (
+                    <p role="alert" style={{ color: '#b42318', marginBottom: '16px' }}>
+                        {erroAcaoCard}
+                    </p>
+                )}
+
+                {tipoLogin === 'administrador' && (
+                    <div className="board-switcher" aria-label="Selecionar modelo de kanban">
+                        {Object.entries(configuracoesQuadro).map(([chave, configuracao]) => (
+                            <button
+                                key={chave}
+                                type="button"
+                                className={`board-switch-btn ${chaveQuadroAtual === chave ? 'active' : ''}`}
+                                onClick={() => {
+                                    definirQuadroSelecionado(chave);
+                                    definirBusca('');
+                                }}
+                            >
+                                {configuracao.label}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                <section className="kanban-board" aria-label="Quadro kanban de producao">
+                    <div
+                        className="kanban-board-grid"
+                        style={{
+                            gridTemplateColumns: `repeat(${colunasQuadro.length}, minmax(200px, 1fr))`,
+                            minWidth: `${larguraMinimaColunas}px`,
+                        }}
+                    >
+                        {colunasQuadro.map((coluna) => (
+                            <div
+                                key={coluna.id}
+                                className={`kanban-column kanban-column--${coluna.tone || 'neutral'}`}
+                                onDragOver={(evento) => evento.preventDefault()}
+                                onDrop={() => aoSoltarNaColuna(coluna.id)}
+                            >
+                                <div className="column-title-wrap">
+                                    <h2>{coluna.title}</h2>
+                                    <span>{cardsAgrupados[coluna.id]?.length || 0}</span>
+                                </div>
+
+                                <div className="column-cards">
+                                    {(cardsAgrupados[coluna.id] || []).map((card) => (
+                                        <article
+                                            key={card.id}
+                                            className="lead-card"
+                                            draggable
+                                            onDragStart={() => definirIdArrastando(card.id)}
+                                            onDragEnd={() => definirIdArrastando(null)}
+                                        >
+                                            <h3>{card.title}</h3>
+                                            {(card.lines || []).map((linha, indice) => (
+                                                <p key={`${card.id}-${indice}`}>{linha}</p>
+                                            ))}
+                                            <p>Vendedor: {card.seller}</p>
+                                            {(card.updatedByProfile || card.createdByProfile) && (
+                                                <p>
+                                                    Perfil da ultima alteracao: {card.updatedByProfile || card.createdByProfile}
+                                                </p>
+                                            )}
+                                            {card.footer && <small>{card.footer}</small>}
+                                            <div className="lead-card-actions">
+                                                <button
+                                                    type="button"
+                                                    className="lead-card-action-btn"
+                                                    onClick={(evento) => {
+                                                        evento.preventDefault();
+                                                        evento.stopPropagation();
+                                                        abrirFormularioEdicaoCard(card);
+                                                    }}
+                                                >
+                                                    Alterar
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="lead-card-action-btn lead-card-action-btn-danger"
+                                                    disabled={excluindoCardId === card.id}
+                                                    onClick={(evento) => {
+                                                        evento.preventDefault();
+                                                        evento.stopPropagation();
+                                                        aoExcluirCard(card.id);
+                                                    }}
+                                                >
+                                                    {excluindoCardId === card.id ? 'Excluindo...' : 'Excluir'}
+                                                </button>
+                                            </div>
+                                        </article>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+
+                {mostrarFormularioNovoCard && (
+                    <div className="kanban-modal-backdrop" role="presentation">
+                        <div className="kanban-modal" role="dialog" aria-modal="true" aria-label="Criar novo card">
+                            <h2>Novo card</h2>
+                            <p>Preencha as informacoes necessarias para o quadro atual.</p>
+
+                            <form className="kanban-modal-form" onSubmit={aoSalvarNovoCard}>
+                                <label htmlFor="columnId">Coluna inicial</label>
+                                <select
+                                    id="columnId"
+                                    name="columnId"
+                                    value={dadosNovoCard.columnId}
+                                    onChange={aoAlterarNovoCard}
+                                    required
+                                >
+                                    <option value="" disabled>Selecione</option>
+                                    {colunasQuadro.map((coluna) => (
+                                        <option key={coluna.id} value={coluna.id}>{coluna.title}</option>
+                                    ))}
+                                </select>
+
+                                <label htmlFor="title">Titulo</label>
+                                <input
+                                    id="title"
+                                    name="title"
+                                    type="text"
+                                    value={dadosNovoCard.title}
+                                    onChange={aoAlterarNovoCard}
+                                    placeholder="Ex: OS: OS-1234"
+                                    required
+                                />
+
+                                <label htmlFor="seller">Vendedor/Responsavel</label>
+                                <input
+                                    id="seller"
+                                    name="seller"
+                                    type="text"
+                                    value={dadosNovoCard.seller}
+                                    onChange={aoAlterarNovoCard}
+                                    placeholder="Ex: Marcos Silva"
+                                />
+
+                                <label htmlFor="details">Detalhes (uma linha por item)</label>
+                                <textarea
+                                    id="details"
+                                    name="details"
+                                    rows="4"
+                                    value={dadosNovoCard.details}
+                                    onChange={aoAlterarNovoCard}
+                                    placeholder="Cliente: Nome\nPeca: Produto\nData: 01/05/2026"
+                                    required
+                                />
+
+                                <label htmlFor="footer">Rodape</label>
+                                <input
+                                    id="footer"
+                                    name="footer"
+                                    type="text"
+                                    value={dadosNovoCard.footer}
+                                    onChange={aoAlterarNovoCard}
+                                    placeholder="Status: Aguardando"
+                                />
+
+                                {erroNovoCard && <p className="kanban-modal-error">{erroNovoCard}</p>}
+
+                                <div className="kanban-modal-actions">
+                                    <button type="button" className="kanban-header-btn" onClick={fecharFormularioNovoCard}>
+                                        Cancelar
+                                    </button>
+                                    <button type="submit" className="new-os-btn" disabled={salvandoNovoCard}>
+                                        {salvandoNovoCard ? 'Salvando...' : 'Salvar card'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+
+                {mostrarFormularioEdicaoCard && (
+                    <div className="kanban-modal-backdrop" role="presentation">
+                        <div className="kanban-modal" role="dialog" aria-modal="true" aria-label="Editar card">
+                            <h2>Editar card</h2>
+                            <p>Altere os campos necessarios e salve para atualizar o card.</p>
+
+                            <form className="kanban-modal-form" onSubmit={aoSalvarEdicaoCard}>
+                                <label htmlFor="edit-columnId">Coluna</label>
+                                <select
+                                    id="edit-columnId"
+                                    name="columnId"
+                                    value={dadosEdicaoCard.columnId}
+                                    onChange={aoAlterarEdicaoCard}
+                                    required
+                                >
+                                    <option value="" disabled>Selecione</option>
+                                    {colunasQuadro.map((coluna) => (
+                                        <option key={coluna.id} value={coluna.id}>{coluna.title}</option>
+                                    ))}
+                                </select>
+
+                                <label htmlFor="edit-title">Titulo</label>
+                                <input
+                                    id="edit-title"
+                                    name="title"
+                                    type="text"
+                                    value={dadosEdicaoCard.title}
+                                    onChange={aoAlterarEdicaoCard}
+                                    required
+                                />
+
+                                <label htmlFor="edit-seller">Vendedor/Responsavel</label>
+                                <input
+                                    id="edit-seller"
+                                    name="seller"
+                                    type="text"
+                                    value={dadosEdicaoCard.seller}
+                                    onChange={aoAlterarEdicaoCard}
+                                />
+
+                                <label htmlFor="edit-details">Detalhes (uma linha por item)</label>
+                                <textarea
+                                    id="edit-details"
+                                    name="details"
+                                    rows="4"
+                                    value={dadosEdicaoCard.details}
+                                    onChange={aoAlterarEdicaoCard}
+                                    required
+                                />
+
+                                <label htmlFor="edit-footer">Rodape</label>
+                                <input
+                                    id="edit-footer"
+                                    name="footer"
+                                    type="text"
+                                    value={dadosEdicaoCard.footer}
+                                    onChange={aoAlterarEdicaoCard}
+                                />
+
+                                {erroEdicaoCard && <p className="kanban-modal-error">{erroEdicaoCard}</p>}
+
+                                <div className="kanban-modal-actions">
+                                    <button type="button" className="kanban-header-btn" onClick={fecharFormularioEdicaoCard}>
+                                        Cancelar
+                                    </button>
+                                    <button type="submit" className="new-os-btn" disabled={salvandoEdicaoCard}>
+                                        {salvandoEdicaoCard ? 'Salvando...' : 'Salvar alteracoes'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+            </main>
+        </div>
+    );
+}

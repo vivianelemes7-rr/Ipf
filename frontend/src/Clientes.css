@@ -1,0 +1,444 @@
+/* ===== LAYOUT GERAL ===== */
+.clientes-page {
+    min-height: 100vh;
+    background: #f4f6f9;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* ===== HEADER ===== */
+.clientes-header {
+    background: linear-gradient(135deg, #1b5e20, #2e7d32);
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.clientes-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.clientes-header-icon {
+    color: #fff;
+    font-size: 1.6rem;
+}
+
+.clientes-header h1 {
+    color: #fff;
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.clientes-header p {
+    color: #a5d6a7;
+    margin: 0;
+    font-size: 0.85rem;
+}
+
+.clientes-btn-voltar {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    padding: 0.5rem 1.2rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+}
+
+.clientes-btn-voltar:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* ===== CONTEÚDO ===== */
+.clientes-content {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* ===== KPIs ===== */
+.clientes-kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.clientes-kpi-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.2rem 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.clientes-kpi-icone {
+    font-size: 1.5rem;
+}
+
+.clientes-kpi-valor {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-top: 0.2rem;
+}
+
+.clientes-kpi-label {
+    font-size: 0.82rem;
+    color: #666;
+    margin-top: 0.2rem;
+}
+
+/* ===== ABAS ===== */
+.clientes-abas {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.clientes-aba-btn {
+    padding: 0.6rem 1.4rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    background: #fff;
+    color: #555;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    transition: background 0.2s, color 0.2s;
+}
+
+.clientes-aba-btn--ativo {
+    background: #2e7d32;
+    color: #fff;
+}
+
+/* ===== BUSCA E FILTROS ===== */
+.clientes-busca-row {
+    display: flex;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.clientes-busca-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    border: 1.5px solid #dde;
+    font-size: 0.9rem;
+    background: #fff;
+    outline: none;
+}
+
+.clientes-filtro-btn {
+    padding: 0.4rem 0.9rem;
+    border-radius: 20px;
+    border: 2px solid transparent;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.82rem;
+    background: #fff;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+/* ===== TABELA ===== */
+.clientes-table-wrapper {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: auto;
+}
+
+.clientes-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 700px;
+}
+
+.clientes-table thead tr {
+    background: #f1f8f1;
+}
+
+.clientes-table th {
+    padding: 0.85rem 1rem;
+    text-align: left;
+    font-size: 0.78rem;
+    color: #555;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.clientes-table td {
+    padding: 0.8rem 1rem;
+    border-top: 1px solid #f0f0f0;
+}
+
+.clientes-table tbody tr:nth-child(even) {
+    background: #fafafa;
+}
+
+.clientes-table tbody tr:nth-child(odd) {
+    background: #fff;
+}
+
+.clientes-td-nome {
+    font-weight: 600;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.clientes-td-contato {
+    font-size: 0.82rem;
+    color: #555;
+}
+
+.clientes-td-telefone {
+    color: #888;
+}
+
+.clientes-td-text {
+    font-size: 0.85rem;
+    color: #555;
+}
+
+.clientes-td-pedidos {
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.clientes-td-valor {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #333;
+}
+
+.clientes-nivel-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.78rem;
+}
+
+.clientes-acoes {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.clientes-btn-editar {
+    background: #e3f2fd;
+    color: #1565c0;
+    border: none;
+    border-radius: 6px;
+    padding: 0.3rem 0.7rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.clientes-btn-excluir {
+    background: #ffebee;
+    color: #c62828;
+    border: none;
+    border-radius: 6px;
+    padding: 0.3rem 0.7rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.clientes-table-empty {
+    text-align: center;
+    padding: 2rem;
+    color: #aaa;
+}
+
+/* ===== GRÁFICOS ===== */
+.clientes-graficos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    gap: 1.5rem;
+}
+
+.clientes-grafico-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.clientes-grafico-card h3 {
+    margin: 0 0 1rem;
+    font-size: 1rem;
+    color: #333;
+    font-weight: 700;
+}
+
+/* ===== FORMULÁRIO DE CADASTRO ===== */
+.clientes-form-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    max-width: 700px;
+}
+
+.clientes-form-card h2 {
+    margin: 0 0 1.5rem;
+    font-size: 1.1rem;
+    color: #2e7d32;
+    font-weight: 700;
+}
+
+.clientes-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.clientes-form-full {
+    grid-column: 1 / -1;
+}
+
+.clientes-form-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 0.3rem;
+    display: block;
+}
+
+.clientes-form-input {
+    width: 100%;
+    padding: 0.6rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    border: 1.5px solid #dde;
+    outline: none;
+    background: #fafafa;
+    box-sizing: border-box;
+}
+
+.clientes-form-input--erro {
+    border-color: #dc3545;
+}
+
+.clientes-form-select {
+    cursor: pointer;
+}
+
+.clientes-form-erro {
+    color: #dc3545;
+    font-size: 0.78rem;
+    display: block;
+    margin-top: 0.2rem;
+}
+
+.clientes-nivel-preview {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 1.1rem;
+    border-radius: 20px;
+    font-weight: 700;
+}
+
+.clientes-form-actions {
+    display: flex;
+    gap: 0.8rem;
+    margin-top: 1.5rem;
+}
+
+.clientes-btn-salvar {
+    background: #2e7d32;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.7rem 1.8rem;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.clientes-btn-cancelar {
+    background: #f5f5f5;
+    color: #555;
+    border: none;
+    border-radius: 8px;
+    padding: 0.7rem 1.4rem;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+/* ===== MODAL ===== */
+.clientes-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.clientes-modal {
+    background: #fff;
+    border-radius: 14px;
+    padding: 2rem;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+    text-align: center;
+}
+
+.clientes-modal-icone {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.clientes-modal h3 {
+    margin: 0 0 0.5rem;
+    color: #c62828;
+}
+
+.clientes-modal p {
+    color: #555;
+    margin: 0 0 1.5rem;
+}
+
+.clientes-modal-acoes {
+    display: flex;
+    gap: 0.8rem;
+    justify-content: center;
+}
+
+.clientes-modal-btn-excluir {
+    background: #c62828;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.6rem 1.4rem;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.clientes-modal-btn-cancelar {
+    background: #f5f5f5;
+    color: #555;
+    border: none;
+    border-radius: 8px;
+    padding: 0.6rem 1.4rem;
+    cursor: pointer;
+    font-weight: 600;
+}

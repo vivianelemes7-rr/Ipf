@@ -1,0 +1,34 @@
+### Configurações de Variáveis
+@url = http://localhost:3000/api/funcionarios
+# Copie o token gerado no arquivo autenticacao.rest e cole abaixo:
+@token = seu_token_aqui_ou_use_a_variavel_automatica
+
+### 1. Listar todos os funcionários (Apenas Gerente)
+GET {{url}}/
+Authorization: Bearer {{token}}
+
+### 2. Editar dados de um funcionário (Apenas Gerente)
+# Substitua o :id pelo ID real do banco (Ex: 1)
+PUT {{url}}/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "nome": "Carlos Admin Atualizado",
+    "permissoes": {
+        "modulo_financeiro": 1,
+        "pode_deletar": 0
+    }
+}
+
+### 3. Testar acesso ao Módulo de Vendas
+GET {{url}}/vendas
+Authorization: Bearer {{token}}
+
+### 4. Testar acesso ao Módulo Financeiro
+GET {{url}}/financeiro
+Authorization: Bearer {{token}}
+
+### 5. Excluir um funcionário (Apenas Gerente)
+DELETE {{url}}/2
+Authorization: Bearer {{token}}
