@@ -9,8 +9,16 @@ const VendaController = {
         } catch (error) {
             next(error);
         }
+    },
+
+    listar: async (req, res, next) => {
+        try {
+            const vendas = await VendaService.listarVendas();
+            res.status(200).json(vendas);
+        } catch (error) {
+            next(error);
+        }
     }
 };
 
 module.exports = VendaController;
-
