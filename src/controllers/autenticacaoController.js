@@ -1,4 +1,4 @@
-onst AutenticacaoModel = require('../models/autenticacaoModel');
+const AutenticacaoModel = require('../models/autenticacaoModel');
 const FuncionarioModel = require('../models/funcionarioModel');
 const AutenticacaoService = require('../services/autenticacaoService');
 
