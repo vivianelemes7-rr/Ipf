@@ -16,8 +16,11 @@ const VendaService = {
             vendaId: novaVenda.insertId,
             mensagem: "Lead convertido em Ordem de Serviço para Arquitetura"
         };
+    },
+
+    listarVendas: async () => {
+        return await VendaModel.listar();
     }
 };
 
 module.exports = VendaService;
-

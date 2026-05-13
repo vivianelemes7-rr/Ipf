@@ -5,8 +5,12 @@ const VendaModel = {
         const query = 'INSERT INTO vendas (lead_id, detalhes_arquitetura, status_venda) VALUES (?, ?, ?)';
         const [result] = await db.query(query, [leadId, detalhesTecnicos, 'Em Arquitetura']);
         return result;
+    },
+
+    listar: async () => {
+        const [rows] = await db.query('SELECT * FROM vendas');
+        return rows;
     }
 };
 
 module.exports = VendaModel;
-
