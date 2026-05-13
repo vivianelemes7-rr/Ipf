@@ -10,7 +10,7 @@ const AutenticacaoService = {
                 modulo_vendas: u.modulo_vendas, modulo_financeiro: u.modulo_financeiro,
                 modulo_producao: u.modulo_producao, modulo_arquitetura: u.modulo_arquitetura 
             } 
-        }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        }, process.env.JWT_SECRET || 'chave_mestra_ipf_2026', { expiresIn: '1h' });
     }
 };
 module.exports = AutenticacaoService;

@@ -1,4 +1,4 @@
-const express = require('express');
+onst express = require('express');
 const cors = require('cors');
 const leadRoutes = require('./routes/leadRoutes');
 const crmRoutes = require('./routes/crmRoutes');
@@ -12,11 +12,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use('/leads', leadRoutes);
-app.use('/crm', crmRoutes);
-app.use('/notificacoes-com', notificacoesComRoutes);
+app.use('/api/leads', leadRoutes);
+app.use('/api/crm', crmRoutes);
+app.use('/api/notificacoes-com', notificacoesComRoutes);
 app.use('/auth', authRoutes);
-app.use('/funcionarios', funcRoutes);
+app.use('/api/funcionarios', funcRoutes);
 
 app.use(manipuladorErros);
 
@@ -25,4 +25,3 @@ app.get('/health', (req, res) => {
 });
 
 module.exports = app;
-
