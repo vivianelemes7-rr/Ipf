@@ -142,12 +142,17 @@
 }
 
 .kanban-board {
-    overflow: auto;
+    overflow-x: auto;
+    overflow-y: hidden;
+    width: 100%;
+    display: flex;
 }
 
 .kanban-board-grid {
     display: grid;
     gap: 12px;
+    width: 100%;
+    flex-shrink: 0;
 }
 
 .kanban-column {
