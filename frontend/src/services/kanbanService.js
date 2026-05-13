@@ -110,3 +110,34 @@ export async function criarCardKanban(chaveQuadro, card) {
         return { success: false, message: erro.message };
     }
 }
+
+export async function atualizarCardKanban(chaveQuadro, idCard, dadosCard) {
+    if (DEVE_USAR_MOCKS) {
+        return { success: true, card: { id: idCard, ...dadosCard } };
+    }
+
+    try {
+        return await requisicao(`/kanban/boards/${chaveQuadro}/cards/${idCard}`, {
+            metodo: 'PATCH',
+            corpo: dadosCard,
+        });
+    } catch (erro) {
+        console.warn('Falha ao atualizar card na API:', erro);
+        return { success: false, message: erro.message };
+    }
+}
+
+export async function excluirCardKanban(chaveQuadro, idCard) {
+    if (DEVE_USAR_MOCKS) {
+        return { success: true };
+    }
+
+    try {
+        return await requisicao(`/kanban/boards/${chaveQuadro}/cards/${idCard}`, {
+            metodo: 'DELETE',
+        });
+    } catch (erro) {
+        console.warn('Falha ao excluir card na API:', erro);
+        return { success: false, message: erro.message };
+    }
+}

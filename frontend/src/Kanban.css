@@ -263,6 +263,44 @@
     margin-top: 4px;
 }
 
+.lead-card-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.lead-card-action-btn {
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #1e293b;
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.lead-card-action-btn:hover:not(:disabled) {
+    border-color: #1a237e;
+    color: #1a237e;
+}
+
+.lead-card-action-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.lead-card-action-btn-danger {
+    border-color: #fecaca;
+    color: #991b1b;
+}
+
+.lead-card-action-btn-danger:hover:not(:disabled) {
+    border-color: #ef4444;
+    color: #7f1d1d;
+}
+
 .kanban-modal-backdrop {
     position: fixed;
     inset: 0;
