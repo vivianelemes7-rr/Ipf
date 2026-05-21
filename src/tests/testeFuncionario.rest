@@ -1,34 +1,57 @@
-### Configurações de Variáveis
-@url = http://localhost:3000/api/funcionarios
-# Copie o token gerado no arquivo autenticacao.rest e cole abaixo:
-@token = seu_token_aqui_ou_use_a_variavel_automatica
+# Funcionários e permissões — /funcionarios, /permissoes
+# Pré-requisito: login em testeAutenticacao.rest (@admin_token e @token)
 
-### 1. Listar todos os funcionários (Apenas Gerente)
-GET {{url}}/
-Authorization: Bearer {{token}}
+@url_base = http://localhost:3000
+@admin_token =
+@token =
+@funcionario_id = 2
 
-### 2. Editar dados de um funcionário (Apenas Gerente)
-# Substitua o :id pelo ID real do banco (Ex: 1)
-PUT {{url}}/1
-Authorization: Bearer {{token}}
+# ─── Funcionários (Gerente) ───
+
+### Listar funcionários
+GET {{url_base}}/funcionarios
+Authorization: Bearer {{admin_token}}
+
+### Aprovar usuário pendente (gerar permissões por cargo)
+POST {{url_base}}/permissoes/{{funcionario_id}}/gerar-por-cargo
+Authorization: Bearer {{admin_token}}
 Content-Type: application/json
 
 {
-    "nome": "Carlos Admin Atualizado",
-    "permissoes": {
-        "modulo_financeiro": 1,
-        "pode_deletar": 0
-    }
+  "cargo": "Vendedor"
 }
 
-### 3. Testar acesso ao Módulo de Vendas
-GET {{url}}/vendas
+### Editar funcionário
+PUT {{url_base}}/funcionarios/{{funcionario_id}}
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "cargo": "Vendedor",
+  "departamento": "Comercial",
+  "status_ativo": true
+}
+
+### Excluir funcionário (cuidado — irreversível)
+# DELETE {{url_base}}/funcionarios/{{funcionario_id}}
+# Authorization: Bearer {{admin_token}}
+
+# ─── Permissões ───
+
+### Obter permissões do funcionário
+GET {{url_base}}/permissoes/{{funcionario_id}}
 Authorization: Bearer {{token}}
 
-### 4. Testar acesso ao Módulo Financeiro
-GET {{url}}/financeiro
-Authorization: Bearer {{token}}
+### Atualizar permissões manualmente (Gerente)
+PUT {{url_base}}/permissoes/{{funcionario_id}}
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
 
-### 5. Excluir um funcionário (Apenas Gerente)
-DELETE {{url}}/2
-Authorization: Bearer {{token}}
+{
+  "modulo_vendas": 1,
+  "modulo_financeiro": 0,
+  "modulo_producao": 0,
+  "modulo_arquitetura": 0,
+  "pode_editar": 1,
+  "pode_deletar": 0
+}

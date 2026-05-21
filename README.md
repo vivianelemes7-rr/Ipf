@@ -15,6 +15,10 @@ O projeto utiliza o padrão de Separação de Responsabilidades (SoC):
 - **Services**: Implementação das regras de negócio e lógica do sistema.
 - **Models**: Comunicação direta com o banco de dados.
 
+## Testes da API
+
+Passo a passo para quem não programa: **[FLUXO_TESTES.md](./FLUXO_TESTES.md)**.
+
 ## Contato
 Em caso de dúvidas técnicas ou necessidade de ajustes na estrutura, entre em contato via WhatsApp.
 

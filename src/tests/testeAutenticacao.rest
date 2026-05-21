@@ -1,53 +1,167 @@
-### Configurações de Variáveis
-@url = http://localhost:3000/api/auth
+# Autenticação — POST/PATCH /auth/*
+# Tokens: copie de "Login admin" → @admin_token e "Login usuário" → @token
+# Próximo passo após cadastro: testeFuncionario.rest (aprovar usuário)
 
-### 1. Cadastrar um novo usuário (Ex: Gerente)
-POST {{url}}/cadastrar
+@url_base = http://localhost:3000
+@email_teste = teste.usuario@ipf.com
+@senha_teste = Senha123!
+@email_admin = admin@ipf.com
+@senha_admin = admin123
+@token =
+@admin_token =
+
+# ─── Setup e cadastro ───
+
+### Criar primeiro Gerente (setup inicial)
+POST {{url_base}}/auth/cadastrar-admin
 Content-Type: application/json
 
 {
-    "nome": "Carlos Administrador",
-    "email": "carlos@ipf.com",
-    "senha": "senha_segura_123",
-    "cargo": "Gerente",
-    "departamento": "Diretoria",
-    "permissoes": {
-        "modulo_vendas": 1,
-        "modulo_financeiro": 1,
-        "modulo_producao": 1,
-        "modulo_arquitetura": 1,
-        "pode_editar": 1,
-        "pode_deletar": 1
-    }
+  "nome": "Admin Geral",
+  "email": "{{email_admin}}",
+  "senha": "{{senha_admin}}"
 }
 
-### 2. Cadastrar um Vendedor (Para testar restrições depois)
-POST {{url}}/cadastrar
+### Cadastro público (usuário pendente)
+POST {{url_base}}/auth/cadastrar
 Content-Type: application/json
 
 {
-    "nome": "Vendedor de Teste",
-    "email": "vendedor@ipf.com",
-    "senha": "123",
-    "cargo": "Vendedor",
-    "departamento": "Comercial",
-    "permissoes": {
-        "modulo_vendas": 1,
-        "modulo_financeiro": 0,
-        "modulo_producao": 0,
-        "modulo_arquitetura": 0,
-        "ver_apenas_proprio": 1
-    }
+  "nome": "Teste Usuário",
+  "email": "{{email_teste}}",
+  "senha": "{{senha_teste}}"
 }
 
-### 3. Realizar Login para obter o Token
-# @name login
-POST {{url}}/login
+### Cadastro vazio (erro esperado 422)
+POST {{url_base}}/auth/cadastrar
+Content-Type: application/json
+
+{}
+
+### Cadastro admin duplicado (erro esperado 409)
+POST {{url_base}}/auth/cadastrar-admin
 Content-Type: application/json
 
 {
-    "email": "carlos@ipf.com",
-    "senha": "senha_segura_123"
+  "nome": "Admin Geral",
+  "email": "{{email_admin}}",
+  "senha": "{{senha_admin}}"
 }
 
-### DICA: O token retornado no login acima será usado automaticamente no outro arquivo
+# ─── Login ───
+
+### Login admin → @admin_token
+POST {{url_base}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email_admin}}",
+  "senha": "{{senha_admin}}"
+}
+
+### Login usuário pendente (erro esperado 403)
+POST {{url_base}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email_teste}}",
+  "senha": "{{senha_teste}}"
+}
+
+### Login senha incorreta (erro esperado 401)
+POST {{url_base}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email_teste}}",
+  "senha": "SenhaErrada123"
+}
+
+### Login email inválido (erro esperado 422)
+POST {{url_base}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "email-invalido",
+  "senha": "{{senha_teste}}"
+}
+
+### Login usuário aprovado → @token (aprove em testeFuncionario.rest antes)
+POST {{url_base}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email_teste}}",
+  "senha": "{{senha_teste}}"
+}
+
+### Login com cargo opcional no body
+POST {{url_base}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email_teste}}",
+  "senha": "{{senha_teste}}",
+  "cargo": "Vendedor"
+}
+
+# ─── Recuperação de senha ───
+
+### Esquecer senha
+POST {{url_base}}/auth/esquecer-senha
+Content-Type: application/json
+
+{
+  "email": "{{email_teste}}"
+}
+
+### Esquecer senha sem email (erro esperado 422)
+POST {{url_base}}/auth/esquecer-senha
+Content-Type: application/json
+
+{}
+
+# ─── Alterar senha (requer @token) ───
+
+### Alterar senha (PATCH)
+PATCH {{url_base}}/auth/alterar-senha
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "senhaAtual": "{{senha_teste}}",
+  "senhaNova": "NovaSenha456!",
+  "confirmarSenha": "NovaSenha456!"
+}
+
+### Alterar senha (POST)
+POST {{url_base}}/auth/alterar-senha
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "senhaAtual": "NovaSenha456!",
+  "senhaNova": "{{senha_teste}}",
+  "confirmarSenha": "{{senha_teste}}"
+}
+
+### Alterar senha sem token (erro esperado 401)
+PATCH {{url_base}}/auth/alterar-senha
+Content-Type: application/json
+
+{
+  "senhaAtual": "{{senha_teste}}",
+  "senhaNova": "NovaSenha456!",
+  "confirmarSenha": "NovaSenha456!"
+}
+
+### Alterar senha — confirmação divergente (erro esperado 422)
+PATCH {{url_base}}/auth/alterar-senha
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "senhaAtual": "{{senha_teste}}",
+  "senhaNova": "NovaSenha456!",
+  "confirmarSenha": "OutraSenha789!"
+}

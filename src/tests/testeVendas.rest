@@ -1,0 +1,22 @@
+# Vendas — /vendas
+# Pré-requisito: @token com módulo vendas e financeiro
+
+@url_base = http://localhost:3000
+@token =
+@lead_id = 1
+
+### Listar vendas
+GET {{url_base}}/vendas
+Authorization: Bearer {{token}}
+
+### Converter lead em venda
+POST {{url_base}}/vendas/converter
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "leadId": {{lead_id}},
+  "detalhesTecnicos": {
+    "observacao": "Conversão via REST Client"
+  }
+}
