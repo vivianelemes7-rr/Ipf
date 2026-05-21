@@ -5,26 +5,43 @@ const crmRoutes = require('./routes/crmRoutes');
 const notificacoesComRoutes = require('./routes/notificacoes_comRoutes');
 const authRoutes = require('./routes/autenticacaoRoutes');
 const funcRoutes = require('./routes/funcionarioRoutes');
-const manipuladorErros = require('./middlewares/erroMiddleware');
+const permissoesRoutes = require('./routes/permissoesRoutes');
+const producaoRoutes = require('./routes/producaoRoutes');
+const matrizRoutes = require('./routes/matrizRoutes');
+const vendaRoutes = require('./routes/vendaRoutes');
+const { manipuladorErros, rotaNaoEncontrada } = require('./middlewares/erroMiddleware');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', message: 'Servidor IPF operante' });
+});
+
 app.use('/leads', leadRoutes);
 app.use('/crm', crmRoutes);
 app.use('/notificacoes-com', notificacoesComRoutes);
 app.use('/auth', authRoutes);
 app.use('/funcionarios', funcRoutes);
+app.use('/permissoes', permissoesRoutes);
+app.use('/producao', producaoRoutes);
+app.use('/matriz', matrizRoutes);
+app.use('/vendas', vendaRoutes);
 
-app.use(manipuladorErros);
+const PREFIXOS_API = [
+    '/auth', '/funcionarios', '/permissoes', '/leads', '/crm',
+    '/vendas', '/producao', '/matriz', '/notificacoes-com'
+];
 
-app.get('/health', (req, res) => {
-    res.json({ status: 'ok', message: 'Servidor IPF operante' });
+app.use((req, res, next) => {
+    if (PREFIXOS_API.some(prefixo => req.path.startsWith(prefixo))) {
+        return rotaNaoEncontrada(req, res, next);
+    }
+    next();
 });
 
-// Servir o front-end React
 const path = require('path');
 app.use(express.static(path.join(__dirname, '..', 'frontend', 'dist')));
 
@@ -32,6 +49,6 @@ app.get('*path', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'frontend', 'dist', 'index.html'));
 });
 
+app.use(manipuladorErros);
 
 module.exports = app;
-
