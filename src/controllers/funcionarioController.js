@@ -1,31 +1,51 @@
 const FuncionarioModel = require('../models/funcionarioModel');
 const AutenticacaoService = require('../services/autenticacaoService');
+const AppError = require('../utils/AppError');
+const { asyncHandler } = require('../utils/asyncHandler');
+const logger = require('../utils/logger');
+
+const CAMPOS_EDITAVEIS = ['nome', 'email', 'cargo', 'departamento', 'status_ativo', 'senha'];
 
 const FuncionarioController = {
-    async listar(req, res, next) {
-        try {
-            const lista = await FuncionarioModel.listarTodos();
-            res.json(lista);
-        } catch (e) { next(e); }
-    },
+    listar: asyncHandler(async (req, res) => {
+        const lista = await FuncionarioModel.listarTodos();
+        res.json(lista);
+    }),
 
-    async editar(req, res, next) {
-        try {
-            const { permissoes, senha, ...dados } = req.body;
-            if (senha) dados.senha = await AutenticacaoService.criptografarSenha(senha);
-            await FuncionarioModel.atualizarFuncionario(req.params.id, dados);
-            if (permissoes) await FuncionarioModel.atualizarPermissoes(req.params.id, permissoes);
-            res.json({ mensagem: "Dados atualizados!" });
-        } catch (e) { next(e); }
-    },
+    editar: asyncHandler(async (req, res) => {
+        const { senha, password, ...resto } = req.body;
+        const dados = {};
 
-    async excluir(req, res, next) {
-        try {
-            const ok = await FuncionarioModel.deletar(req.params.id);
-            if (!ok) { const e = new Error("Funcionário não encontrado"); e.statusCode = 404; throw e; }
-            res.json({ mensagem: "Removido com sucesso!" });
-        } catch (e) { next(e); }
-    }
+        for (const campo of CAMPOS_EDITAVEIS) {
+            if (resto[campo] !== undefined) dados[campo] = resto[campo];
+        }
+
+        const senhaBody = password || senha;
+        if (senhaBody) {
+            dados.senha = await AutenticacaoService.criptografarSenha(senhaBody);
+        }
+
+        if (Object.keys(dados).length === 0) {
+            throw AppError.badRequest('Nenhum campo válido para atualizar');
+        }
+
+        const afetados = await FuncionarioModel.atualizarFuncionario(req.params.id, dados);
+        if (!afetados) {
+            throw AppError.notFound('Funcionário não encontrado');
+        }
+
+        logger.info('FUNCIONARIO', `Atualizado id=${req.params.id}`);
+        res.json({ sucesso: true, mensagem: 'Dados atualizados!' });
+    }),
+
+    excluir: asyncHandler(async (req, res) => {
+        const ok = await FuncionarioModel.deletar(req.params.id);
+        if (!ok) {
+            throw AppError.notFound('Funcionário não encontrado');
+        }
+        logger.info('FUNCIONARIO', `Removido id=${req.params.id}`);
+        res.json({ sucesso: true, mensagem: 'Removido com sucesso!' });
+    })
 };
 
 module.exports = FuncionarioController;

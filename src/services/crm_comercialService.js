@@ -1,3 +1,4 @@
+const AppError = require('../utils/AppError');
 const CRMComercialModel = require("../models/crm_comercialModel");
 const VendaModel = require("../models/vendaModel");
 const ProducaoModel = require("../models/producaoModel");
@@ -15,12 +16,12 @@ class CRMComercialService {
         if (dados.numero_pedido) {
             const existingPedido = await CRMComercialModel.findByNumeroPedido(dados.numero_pedido);
             if (existingPedido) {
-                throw new Error("Este número de pedido já está vinculado a outro lead.");
+                throw AppError.conflict('Este número de pedido já está vinculado a outro lead.');
             }
         }
 
         if (!dados.lead_id) {
-            throw new Error("O ID do Lead é obrigatório para iniciar um card no CRM.");
+            throw AppError.badRequest('O ID do Lead é obrigatório para iniciar um card no CRM.');
         }
 
         return await CRMComercialModel.create(dados);
@@ -28,12 +29,12 @@ class CRMComercialService {
 
     static async finalizeWinningSale(id, numero_pedido) {
         if (!numero_pedido) {
-            throw new Error("É necessário informar o número do pedido para finalizar a venda.");
+            throw AppError.badRequest('É necessário informar o número do pedido para finalizar a venda.');
         }
 
         const existingPedido = await CRMComercialModel.findByNumeroPedido(numero_pedido);
         if (existingPedido && existingPedido.id !== parseInt(id)) {
-            throw new Error("Este número de pedido já foi utilizado em outra negociação.");
+            throw AppError.conflict('Este número de pedido já foi utilizado em outra negociação.');
         }
 
         // 1. Marca como Ganho no CRM
@@ -54,9 +55,17 @@ class CRMComercialService {
 
     static async finalizeLostSale(id, motivo) {
         if (!motivo || motivo.trim() === "") {
-            throw new Error("É necessário informar o motivo da perda.");
+            throw AppError.badRequest('É necessário informar o motivo da perda.');
         }
         return await CRMComercialModel.markAsLost(id, motivo);
+    }
+
+    static async updateCard(id, dados) {
+        if (!id) {
+            throw AppError.badRequest('O ID do card é obrigatório para atualização.');
+        }
+
+        return await CRMComercialModel.update(id, dados);
     }
 
     static async deleteCard(id) {

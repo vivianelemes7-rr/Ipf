@@ -1,24 +1,17 @@
 const VendaService = require('../services/vendaService');
+const { asyncHandler } = require('../utils/asyncHandler');
 
 const VendaController = {
-    converter: async (req, res, next) => {
-        try {
-            const { leadId, detalhesTecnicos } = req.body;
-            const resultado = await VendaService.converterLeadParaVenda(leadId, detalhesTecnicos);
-            res.status(201).json(resultado);
-        } catch (error) {
-            next(error);
-        }
-    },
+    converter: asyncHandler(async (req, res) => {
+        const { leadId, detalhesTecnicos } = req.body;
+        const resultado = await VendaService.converterLeadParaVenda(leadId, detalhesTecnicos);
+        res.status(201).json(resultado);
+    }),
 
-    listar: async (req, res, next) => {
-        try {
-            const vendas = await VendaService.listarVendas();
-            res.status(200).json(vendas);
-        } catch (error) {
-            next(error);
-        }
-    }
+    listar: asyncHandler(async (req, res) => {
+        const vendas = await VendaService.listarVendas();
+        res.status(200).json(vendas);
+    })
 };
 
 module.exports = VendaController;
