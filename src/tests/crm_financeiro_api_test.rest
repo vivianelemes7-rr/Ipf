@@ -1,0 +1,64 @@
+### Configuração de Variáveis de Ambiente
+@baseUrl = http://localhost:3000/api/financeiro
+@contentType = application/json
+
+### 1. Busca todos os cards do Kanban Financeiro (Geral)
+GET {{baseUrl}}/financeiro
+Accept: {{contentType}}
+
+### 2. Busca cards filtrados por um responsável do financeiro específico
+GET {{baseUrl}}/financeiro?responsavel_fin_id=3
+Accept: {{contentType}}
+
+### 3. Busca cards filtrados por uma coluna/etapa (Ex: Gerar Ordem de Compra/Pagamento ou Notificação de Liberação)
+GET {{baseUrl}}/financeiro?etapa_kanban=Liberado%20para%20Produção
+Accept: {{contentType}}
+
+### 4. Criar um card no financeiro (Simulando gatilho do Gerar Ordem de Compra/Pagamento vindo do comercial)
+# Altere o 'pedido_id' para um ID existente na sua tabela de pedidos
+POST {{baseUrl}}/financeiro
+Content-Type: {{contentType}}
+
+{
+  "pedido_id": 211,
+  "responsavel_fin_id": 1,
+  "etapa_kanban": "Validando UC10",
+  "valor_total_pedido": 15000.00,
+  "status_pagamento": "Pendente",
+  "custo_matriz_externa": 0.00,
+  "observacoes_financeiras": "Aguardando confirmação do PIX de entrada do cliente Inova Real Estate."
+}
+
+### 5. Atualizar dados do card (Ex: Alterando o responsável financeiro ou adicionando notas)
+# Altere o ':id' para o ID gerado pelo banco na criação acima
+PUT {{baseUrl}}/financeiro/1
+Content-Type: {{contentType}}
+
+{
+  "responsavel_fin_id": 3,
+  "etapa_kanban": "Validando UC10",
+  "valor_total_pedido": 15000.00,
+  "status_pagamento": "Parcialmente Pago",
+  "custo_matriz_externa": 1200.00,
+  "matriz_externa_paga": false,
+  "liberado_para_producao": false,
+  "data_vencimento_proxima": "2026-06-01",
+  "observacoes_financeiras": "Entrada de R$ 7.500 paga. Marcos Silva assumiu a conta."
+}
+
+### 6. GATILHO:  Notificação de Liberação - Liberar para Produção (Executa a transação SQL)
+# Este endpoint atualiza o financeiro e altera o status na tabela 'pedidos' para 'Produção'
+PATCH {{baseUrl}}/financeiro/1/liberar-producao
+Accept: {{contentType}}
+
+### 7. Atualizar rapidamente o Status de Pagamento (Ex: Quando o cliente quitar)
+PATCH {{baseUrl}}/financeiro/1/status-pagamento
+Content-Type: {{contentType}}
+
+{
+  "status_pagamento": "Quitado"
+}
+
+### 8. Deletar um card do financeiro
+DELETE {{baseUrl}}/financeiro/1
+Accept: {{contentType}}

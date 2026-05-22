@@ -39,15 +39,11 @@ class CRMComercialModel {
 
     static async findIdleLeads(diasLimite = 2) {
         const query = `
-            SELECT crm.id,
-                   crm.vendedor_id,
-                   crm.etapa_kanban,
-                   l.nome_contato
+            SELECT crm.id, crm.vendedor_id, crm.etapa_kanban, l.nome_contato
             FROM crm_comercial crm
             JOIN leads l ON crm.lead_id = l.id
             WHERE crm.status_final = 'Em Aberto'
-              AND crm.data_movimentacao < DATE_SUB(NOW(), INTERVAL ? DAY)
-        `;
+              AND crm.data_movimentacao < DATE_SUB(NOW(), INTERVAL ? DAY)`;
         const [rows] = await db.query(query, [diasLimite]);
         return rows;
     }
@@ -68,7 +64,7 @@ class CRMComercialModel {
             previsao_fechamento,
             proposta_url,
             observacoes_venda,
-            numero_pedido // Adicionado
+            numero_pedido
         } = dados;
 
         const query = `INSERT INTO crm_comercial 
