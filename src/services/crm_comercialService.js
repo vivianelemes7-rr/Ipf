@@ -26,6 +26,11 @@ class CRMComercialService {
         return await CRMComercialModel.create(dados);
     }
 
+    // Atualização de card (ex: mover etapa, atualizar valor, etc.)
+    static async updateCard(id, dados) {
+        return await CRMComercialModel.update(id, dados);
+    }
+
     static async finalizeWinningSale(id, numero_pedido) {
         if (!numero_pedido) {
             throw new Error("É necessário informar o número do pedido para finalizar a venda.");
@@ -46,7 +51,6 @@ class CRMComercialService {
             // 3. CRIAÇÃO DA VENDA (Conexão com setor de Projetos/Arquitetura)
             await VendaModel.criarDaLead(card.lead_id, card.observacoes_venda || 'Pedido gerado via CRM');
             
-            // 4. Aqui podemos adicionar a  chamada para a Produção futuramente
         }
 
         return updatedRows;

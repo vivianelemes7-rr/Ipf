@@ -1,33 +1,33 @@
 ### Configurações Globais
-@baseUrl = http://localhost:3000/api
+@baseUrl = http://localhost:3000/api/notificacoes-com
 @funcionarioId = 1
 @notificacaoId = 1
 
-### 1. Testar Saúde do Servidor
-GET {{baseUrl}}/health
+### 1. Testar Saúde do Servidor (Aqui costuma ser na raiz da API ou no próprio recurso)
+GET http://localhost:3000/api/notificacoes-com/health
 Accept: application/json
 
-
 ### 2. Rodar Automação de Atrasos (Simular o Cron)
-# Este endpoint varre o banco e gera notificações para leads parados
-POST {{baseUrl}}/notificacoes-com/processar-atrasos
+# Ajustado: tirou a repetição da rota
+POST {{baseUrl}}/processar-atrasos
 Content-Type: application/json
 
-
 ### 3. Listar Notificações do Funcionário
-# Retorna a lista de notificações e o contador de não lidas
-GET {{baseUrl}}/notificacoes-com/{{funcionarioId}}
+# Ajustado: {{baseUrl}}/{{funcionarioId}}
+GET {{baseUrl}}/{{funcionarioId}}
 Accept: application/json
 
 ### 4. Marcar uma Notificação como LIDA
-# Substitua o ID final pelo ID real gerado no teste 2 ou 3
-PATCH {{baseUrl}}/notificacoes-com/ler/{{notificacaoId}}
+# Ajustado: {{baseUrl}}/ler/{{notificacaoId}}
+PATCH {{baseUrl}}/ler/{{notificacaoId}}
 Content-Type: application/json
 
 ### 5. Marcar TODAS como lidas
-PATCH {{baseUrl}}/notificacoes-com/ler-tudo/{{funcionarioId}}
+# Ajustado: {{baseUrl}}/ler-tudo/{{funcionarioId}}
+PATCH {{baseUrl}}/ler-tudo/{{funcionarioId}}
 Content-Type: application/json
 
 ### 6. Excluir uma Notificação
-DELETE {{baseUrl}}/notificacoes-com/{{notificacaoId}}
+# Ajustado: {{baseUrl}}/{{notificacaoId}}
+DELETE {{baseUrl}}/{{notificacaoId}}
 Accept: application/json

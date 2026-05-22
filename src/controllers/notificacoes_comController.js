@@ -1,6 +1,15 @@
 const NotificacaoComService = require('../services/notificacoes_comService');
 
 class NotificacaoComController {
+    //Verificar saúde do servidor
+    static async healthCheck(req, res) {
+    return res.status(200).json({ 
+        status: "OK", 
+        timestamp: new Date(),
+        message: "Módulo de notificações comerciais operando normalmente." 
+    });
+    }
+
     // Lista todas as notificações e o total de não lidas
     static async listar(req, res) {
         try {
@@ -50,11 +59,15 @@ class NotificacaoComController {
         try {
             const totalGerado = await NotificacaoComService.verificarEGerarAlertasDeAtraso();
             return res.status(200).json({ 
-                message: "Automação executada com sucesso.", 
-                alertasGerados: totalGerado 
+                success: true,
+                message: "Automação executada com sucesso via requisição manual.", 
+                alertas_gerados: totalGerado 
             });
         } catch (error) {
-            return res.status(500).json({ error: error.message });
+            return res.status(500).json({ 
+                success: false,
+                error: error.message 
+            });
         }
     }
 }
