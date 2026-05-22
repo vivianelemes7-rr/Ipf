@@ -1,6 +1,6 @@
 ### Configurações Iniciais
 @baseURL = http://localhost:3000/api/crm
-@id_do_card = 1
+@id_do_card = 21
 @vendedor_id = 1
 
 ### 1. Listar todos os cards do Kanban
@@ -16,12 +16,12 @@ POST {{baseURL}}/
 Content-Type: application/json
 
 {
-    "lead_id": 10,
-    "vendedor_id": 1,
+    "lead_id": 2,
+    "vendedor_id": 2,
     "etapa_kanban": "Novo",
-    "valor_estimado": 5500.00,
-    "prioridade": 2,
-    "observacoes_venda": "Cliente interessado em automação residencial."
+    "valor_estimado": 1000.00,
+    "prioridade": 1,
+    "observacoes_venda": "Cliente precisa de revestimentos externos para casa."
 }
 
 ### 4. Criar card sem lead_id (Erro esperado)
@@ -38,7 +38,7 @@ PUT {{baseURL}}/{{id_do_card}}
 Content-Type: application/json
 
 {
-    "etapa_kanban": "Proposta",
+    "etapa_kanban": "Finalização",
     "valor_estimado": 6000.00,
     "vendedor_id": 1
 }
