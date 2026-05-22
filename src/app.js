@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const leadRoutes = require('./routes/leadRoutes');
 const crmRoutes = require('./routes/crmRoutes');
+const crmFinanceiroRoutes = require('./routes/crmFinanceiroRoutes');
 const notificacoesComRoutes = require('./routes/notificacoes_comRoutes');
 const authRoutes = require('./routes/autenticacaoRoutes');
 const funcRoutes = require('./routes/funcionarioRoutes');
@@ -14,6 +15,7 @@ app.use(express.json());
 
 app.use('/api/leads', leadRoutes);
 app.use('/api/crm', crmRoutes);
+app.use('/api/financeiro', crmFinanceiroRoutes);
 app.use('/api/notificacoes-com', notificacoesComRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/funcionarios', funcRoutes);
