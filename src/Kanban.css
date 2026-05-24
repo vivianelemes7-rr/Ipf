@@ -317,7 +317,9 @@
 }
 
 .kanban-modal {
-    width: min(560px, 100%);
+    width: min(500px, 92vw);
+    max-height: 90vh;
+    overflow: auto;
     background: #ffffff;
     border: 1px solid #dbe6ff;
     border-radius: 14px;
@@ -370,6 +372,7 @@
 .kanban-modal-actions {
     display: flex;
     justify-content: flex-end;
+    flex-wrap: wrap;
     gap: 8px;
     margin-top: 6px;
 }
@@ -410,9 +413,10 @@
 
     .kanban-modal-actions {
         width: 100%;
+        flex-direction: column;
     }
 
     .kanban-modal-actions button {
-        flex: 1;
+        width: 100%;
     }
 }
