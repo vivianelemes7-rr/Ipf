@@ -1,4 +1,4 @@
-export const PAPEIS_PERMITIDOS = ['administrador', 'arquitetura', 'producao', 'vendedor', 'gerente', 'financeiro'];
+export const PAPEIS_PERMITIDOS = ['administrador', 'arquitetura', 'producao', 'vendedor', 'gerente', 'financeiro', 'logistica'];
 
 export const QUADRO_PADRAO_POR_PAPEL = {
     arquitetura: 'arquitetura',
@@ -6,6 +6,7 @@ export const QUADRO_PADRAO_POR_PAPEL = {
     vendedor: 'vendedor',
     gerente: 'gerente',
     financeiro: 'financeiro',
+    logistica: 'logistica',
     administrador: 'arquitetura',
 };
 
@@ -15,5 +16,6 @@ export const ACESSO_CARDS_DASHBOARD = {
     arquitetura: ['Kanban'],
     financeiro: ['Clientes', 'Vendas', 'Kanban'],
     producao: ['Kanban'],
+    logistica: ['Kanban'],
     gerente: ['Vendas', 'Vendedores', 'Kanban', 'Cadastro de Vendedor'],
 };

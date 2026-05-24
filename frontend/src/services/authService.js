@@ -1,14 +1,18 @@
 import { DEVE_USAR_MOCKS } from '../config/env';
 import { requisicao } from './httpClient';
 import { limparSessao, persistirSessao } from './sessionService';
+import { encontrarFuncionarioPorCredenciais } from './funcionarioService';
+import { API_ENDPOINTS, API_FIELDS } from '../config/apiContract';
 
 function normalizarCargaAutenticacao(carga, papelPadrao) {
-    const token = carga?.token || carga?.accessToken || '';
-    const usuario = carga?.user || {
-        id: carga?.userId || 'local-user',
-        name: carga?.name || 'Usuario',
-        email: carga?.email || '',
-        role: carga?.role || papelPadrao,
+    const token = carga?.[API_FIELDS.authResponse.token]
+        || carga?.[API_FIELDS.authResponse.accessToken]
+        || '';
+    const usuario = carga?.[API_FIELDS.authResponse.user] || {
+        id: carga?.[API_FIELDS.authResponse.userId] || 'local-user',
+        name: carga?.[API_FIELDS.authResponse.name] || 'Usuario',
+        email: carga?.[API_FIELDS.authResponse.email] || '',
+        role: carga?.[API_FIELDS.authResponse.role] || papelPadrao,
     };
 
     return {
@@ -21,25 +25,31 @@ function normalizarCargaAutenticacao(carga, papelPadrao) {
 export async function autenticar({ email, senha, papel }) {
     if (DEVE_USAR_MOCKS) {
         const emailNormalizado = (email || '').trim().toLowerCase();
-        const idUsuarioMock = emailNormalizado || 'mock-user';
+        const funcionario = encontrarFuncionarioPorCredenciais(emailNormalizado, senha);
+
+        const papelSessao = funcionario?.papel || papel;
         const sessaoMock = {
             token: 'mock-token',
             usuario: {
-                id: idUsuarioMock,
-                name: email?.split('@')[0] || 'Usuario',
+                id: funcionario?.id || emailNormalizado || 'mock-user',
+                name: funcionario?.nome || email?.split('@')[0] || 'Usuario',
                 email: emailNormalizado,
-                role: papel,
+                role: papelSessao,
             },
-            papel,
+            papel: papelSessao,
         };
 
         persistirSessao(sessaoMock);
         return sessaoMock;
     }
 
-    const cargaApi = await requisicao('/auth/login', {
+    const cargaApi = await requisicao(API_ENDPOINTS.auth.login, {
         metodo: 'POST',
-        corpo: { email, password: senha, role: papel },
+        corpo: {
+            [API_FIELDS.authRequest.email]: email,
+            [API_FIELDS.authRequest.password]: senha,
+            [API_FIELDS.authRequest.role]: papel,
+        },
     });
 
     const sessao = normalizarCargaAutenticacao(cargaApi, papel);

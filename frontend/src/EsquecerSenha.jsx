@@ -34,25 +34,6 @@ const EsquecerSenha = () => {
         <div className="forgot-page-wrapper">
             <div className="forgot-container">
                 <div className="animate-fade-in">
-                    <div className="d-flex justify-content-end mb-2">
-                        <button
-                            type="button"
-                            className="btn btn-outline-primary btn-sm me-2"
-                            onClick={() => navegar('/alterar-senha')}
-                        >
-                            Alterar senha
-                        </button>
-                        <button
-                            type="button"
-                            className="btn btn-outline-danger btn-sm"
-                            onClick={() => {
-                                sair();
-                                navegar('/', { replace: true });
-                            }}
-                        >
-                            Sair
-                        </button>
-                    </div>
                     <h4 className="title">Recuperar Senha</h4>
                     <p className="subtitle">Insira seu e-mail para receber as instruções.</p>
 
