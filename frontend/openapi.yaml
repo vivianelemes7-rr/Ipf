@@ -1,0 +1,375 @@
+openapi: 3.0.3
+info:
+  title: IPF API Contract
+  version: 1.0.0
+  description: |
+    OpenAPI contract aligned with the frontend integration contract in src/config/apiContract.js.
+    Field names and enum values are intentionally identical to reduce integration friction.
+servers:
+  - url: http://localhost:3000
+    description: Local API
+
+tags:
+  - name: Auth
+  - name: Kanban
+
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Authenticate user
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /kanban/boards:
+    get:
+      tags: [Kanban]
+      summary: List kanban boards
+      operationId: listBoards
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Boards list (supported formats used by frontend)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/BoardsObjectResponse'
+                  - $ref: '#/components/schemas/BoardsArrayResponse'
+                  - $ref: '#/components/schemas/BoardsDataEnvelopeResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /kanban/boards/{boardKey}/cards:
+    post:
+      tags: [Kanban]
+      summary: Create card in board
+      operationId: createCard
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/BoardKeyPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Card'
+      responses:
+        '201':
+          description: Card created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardMutationResponse'
+        '200':
+          description: Card created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardMutationResponse'
+
+  /kanban/boards/{boardKey}/cards/{cardId}:
+    patch:
+      tags: [Kanban]
+      summary: Update card fields or move card column
+      operationId: patchCard
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/BoardKeyPathParam'
+        - $ref: '#/components/parameters/CardIdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardPatchRequest'
+      responses:
+        '200':
+          description: Card updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardMutationResponse'
+
+    delete:
+      tags: [Kanban]
+      summary: Delete card
+      operationId: deleteCard
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/BoardKeyPathParam'
+        - $ref: '#/components/parameters/CardIdPathParam'
+      responses:
+        '200':
+          description: Card deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '204':
+          description: Card deleted (no content)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    BoardKeyPathParam:
+      name: boardKey
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/BoardKey'
+    CardIdPathParam:
+      name: cardId
+      in: path
+      required: true
+      schema:
+        oneOf:
+          - type: integer
+          - type: string
+
+  schemas:
+    Role:
+      type: string
+      enum: [administrador, arquitetura, producao, vendedor, gerente, financeiro, logistica]
+
+    ProcessTag:
+      type: string
+      enum: [normal, especial]
+
+    BoardKey:
+      type: string
+      enum: [arquitetura, producao, vendedor, gerente, financeiro, logistica]
+
+    LoginRequest:
+      type: object
+      required: [email, password, role]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        role:
+          $ref: '#/components/schemas/Role'
+
+    User:
+      type: object
+      required: [id, name, email, role]
+      properties:
+        id:
+          oneOf:
+            - type: integer
+            - type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/Role'
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: Preferred auth token field
+        accessToken:
+          type: string
+          description: Also accepted by frontend as alternative to token
+        user:
+          $ref: '#/components/schemas/User'
+        userId:
+          oneOf:
+            - type: integer
+            - type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/Role'
+      additionalProperties: true
+
+    Column:
+      type: object
+      required: [id, title, tone]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        tone:
+          type: string
+      additionalProperties: true
+
+    Card:
+      type: object
+      required: [id, columnId, title]
+      properties:
+        id:
+          oneOf:
+            - type: integer
+            - type: string
+        columnId:
+          type: string
+        title:
+          type: string
+        lines:
+          type: array
+          items:
+            type: string
+        footer:
+          type: string
+        seller:
+          type: string
+        processTag:
+          $ref: '#/components/schemas/ProcessTag'
+        budgetFileName:
+          type: string
+        clientDocument:
+          type: string
+        clientAddress:
+          type: string
+        homologadoCliente:
+          type: boolean
+        updatedAt:
+          type: string
+          format: date-time
+        updatedByProfile:
+          type: string
+      additionalProperties: true
+
+    CardPatchRequest:
+      type: object
+      properties:
+        columnId:
+          type: string
+        title:
+          type: string
+        lines:
+          type: array
+          items:
+            type: string
+        footer:
+          type: string
+        seller:
+          type: string
+        processTag:
+          $ref: '#/components/schemas/ProcessTag'
+        budgetFileName:
+          type: string
+        clientDocument:
+          type: string
+        clientAddress:
+          type: string
+        homologadoCliente:
+          type: boolean
+        updatedAt:
+          type: string
+          format: date-time
+        updatedByProfile:
+          type: string
+      additionalProperties: true
+
+    Board:
+      type: object
+      required: [key, title, columns, cards]
+      properties:
+        key:
+          $ref: '#/components/schemas/BoardKey'
+        title:
+          type: string
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/Column'
+        cards:
+          type: array
+          items:
+            $ref: '#/components/schemas/Card'
+      additionalProperties: true
+
+    BoardsObjectResponse:
+      type: object
+      required: [boards]
+      properties:
+        boards:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Board'
+
+    BoardsArrayResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/Board'
+
+    BoardsDataEnvelopeResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          oneOf:
+            - $ref: '#/components/schemas/BoardsObjectResponse'
+            - $ref: '#/components/schemas/BoardsArrayResponse'
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+      additionalProperties: true
+
+    CardMutationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        card:
+          $ref: '#/components/schemas/Card'
+        message:
+          type: string
+      additionalProperties: true
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      additionalProperties: true

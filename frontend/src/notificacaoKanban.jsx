@@ -9,6 +9,7 @@ import {
     marcarTodasNotificacoesComoLidas,
     obterPapeisComAcessoAoQuadro,
     verificarNotificacoesInatividade,
+    verificarAlertasSlaComercial,
 } from './services/notificacaoKanbanService';
 import { obterPapelUsuarioAtual } from './services/sessionService';
 
@@ -49,6 +50,13 @@ export default function NotificacaoKanban() {
                     cards: quadro.cards || [],
                     papeisDestino,
                 });
+
+                if (chaveQuadro === 'vendedor') {
+                    verificarAlertasSlaComercial({
+                        cards: quadro.cards || [],
+                        papeisDestino,
+                    });
+                }
             });
 
             carregarNotificacoes();
@@ -154,6 +162,20 @@ export default function NotificacaoKanban() {
                         onClick={() => definirFiltroTipo('inatividade')}
                     >
                         Inatividade
+                    </button>
+                    <button
+                        type="button"
+                        className={`filtro-btn ${filtroTipo === 'sla-contato' ? 'active' : ''}`}
+                        onClick={() => definirFiltroTipo('sla-contato')}
+                    >
+                        SLA Contato
+                    </button>
+                    <button
+                        type="button"
+                        className={`filtro-btn ${filtroTipo === 'sla-orcamento' ? 'active' : ''}`}
+                        onClick={() => definirFiltroTipo('sla-orcamento')}
+                    >
+                        SLA Orcamento
                     </button>
                 </section>
 

@@ -69,3 +69,53 @@ ou
 
 4. Implementar endpoint `PATCH /kanban/boards/:boardKey/cards/:cardId` com body `{ "columnId": "novo-status" }`.
 5. Quando o ambiente estiver estavel, remover fallback para mocks em `src/services/kanbanService.js`.
+
+## Contrato unico de integracao
+
+Foi criado o arquivo `src/config/apiContract.js` para centralizar endpoints, campos e valores esperados.
+
+Contrato OpenAPI para o backend implementar direto:
+
+- `openapi.yaml`
+
+Se o backend seguir esse contrato, a integracao fica direta e com menos ajustes no front.
+
+### Palavras que precisam bater com o back-end
+
+Endpoints:
+
+- `/auth/login`
+- `/kanban/boards`
+- `/kanban/boards/:boardKey/cards`
+- `/kanban/boards/:boardKey/cards/:cardId`
+
+Campos de autenticacao:
+
+- request: `email`, `password`, `role`
+- response: `token` (ou `accessToken`), `user`, `id`, `name`, `email`, `role`
+
+Envelope de resposta aceito:
+
+- `data` (opcional, quando o payload vier envelopado)
+- `boards`
+- `message`
+
+Campos de board:
+
+- `key`, `title`, `columns`, `cards`
+
+Campos de coluna:
+
+- `id`, `title`, `tone`
+
+Campos de card:
+
+- `id`, `columnId`, `title`, `lines`, `footer`, `seller`
+- `processTag`, `budgetFileName`, `clientDocument`, `clientAddress`, `homologadoCliente`
+- `updatedAt`, `updatedByProfile`
+
+Valores fixos esperados hoje:
+
+- papeis: `administrador`, `arquitetura`, `producao`, `vendedor`, `gerente`, `financeiro`, `logistica`
+- tags de processo: `normal`, `especial`
+- chaves de board: `arquitetura`, `producao`, `vendedor`, `gerente`, `financeiro`, `logistica`

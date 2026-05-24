@@ -2,6 +2,7 @@ import { CONFIGURACOES_QUADRO, VENDEDORES_PADRAO } from '../mocks/kanbanMock';
 import { QUADRO_PADRAO_POR_PAPEL } from '../config/roles';
 import { DEVE_USAR_MOCKS } from '../config/env';
 import { requisicao } from './httpClient';
+import { API_ENDPOINTS, API_FIELDS } from '../config/apiContract';
 
 function comVendedoresPadrao(configuracoesQuadro) {
     return Object.fromEntries(
@@ -25,16 +26,17 @@ function obterQuadrosMock() {
 function normalizarColecaoQuadros(carga) {
     if (!carga) return {};
 
-    if (carga.boards && typeof carga.boards === 'object' && !Array.isArray(carga.boards)) {
-        return carga.boards;
+    const chaveBoards = API_FIELDS.commonEnvelope.boards;
+    if (carga[chaveBoards] && typeof carga[chaveBoards] === 'object' && !Array.isArray(carga[chaveBoards])) {
+        return carga[chaveBoards];
     }
 
-    if (Array.isArray(carga.boards)) {
-        return Object.fromEntries(carga.boards.map((quadro) => [quadro.key, quadro]));
+    if (Array.isArray(carga[chaveBoards])) {
+        return Object.fromEntries(carga[chaveBoards].map((quadro) => [quadro[API_FIELDS.board.key], quadro]));
     }
 
     if (Array.isArray(carga)) {
-        return Object.fromEntries(carga.map((quadro) => [quadro.key, quadro]));
+        return Object.fromEntries(carga.map((quadro) => [quadro[API_FIELDS.board.key], quadro]));
     }
 
     if (typeof carga === 'object') {
@@ -67,7 +69,7 @@ export async function listarQuadrosKanban() {
     }
 
     try {
-        const quadrosApi = await requisicao('/kanban/boards');
+        const quadrosApi = await requisicao(API_ENDPOINTS.kanban.boards);
         const quadrosNormalizados = normalizarColecaoQuadros(quadrosApi);
         return comVendedoresPadrao(garantirChavesQuadro(quadrosNormalizados));
     } catch (erro) {
@@ -82,10 +84,10 @@ export async function atualizarColunaCardKanban(chaveQuadro, idCard, idColuna, m
     }
 
     try {
-        return await requisicao(`/kanban/boards/${chaveQuadro}/cards/${idCard}`, {
+        return await requisicao(API_ENDPOINTS.kanban.boardCard(chaveQuadro, idCard), {
             metodo: 'PATCH',
             corpo: {
-                columnId: idColuna,
+                [API_FIELDS.card.columnId]: idColuna,
                 ...metadados,
             },
         });
@@ -101,7 +103,7 @@ export async function criarCardKanban(chaveQuadro, card) {
     }
 
     try {
-        return await requisicao(`/kanban/boards/${chaveQuadro}/cards`, {
+        return await requisicao(API_ENDPOINTS.kanban.boardCards(chaveQuadro), {
             metodo: 'POST',
             corpo: card,
         });
@@ -117,7 +119,7 @@ export async function atualizarCardKanban(chaveQuadro, idCard, dadosCard) {
     }
 
     try {
-        return await requisicao(`/kanban/boards/${chaveQuadro}/cards/${idCard}`, {
+        return await requisicao(API_ENDPOINTS.kanban.boardCard(chaveQuadro, idCard), {
             metodo: 'PATCH',
             corpo: dadosCard,
         });
@@ -133,7 +135,7 @@ export async function excluirCardKanban(chaveQuadro, idCard) {
     }
 
     try {
-        return await requisicao(`/kanban/boards/${chaveQuadro}/cards/${idCard}`, {
+        return await requisicao(API_ENDPOINTS.kanban.boardCard(chaveQuadro, idCard), {
             metodo: 'DELETE',
         });
     } catch (erro) {

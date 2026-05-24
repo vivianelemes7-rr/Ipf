@@ -2,6 +2,7 @@ import { QUADRO_PADRAO_POR_PAPEL } from '../config/roles';
 
 const CHAVE_NOTIFICACOES = 'kanbanNotifications';
 const DIAS_INATIVIDADE_PADRAO = 20;
+const DIAS_SLA_COMERCIAL_PADRAO = 7;
 const MILISSEGUNDOS_POR_DIA = 1000 * 60 * 60 * 24;
 
 function lerNotificacoes() {
@@ -158,6 +159,71 @@ export function verificarNotificacoesInatividade({
                 message: `${card.title} esta sem movimentacao ha ${diasSemMovimento} dias.`,
             })
         );
+    });
+
+    if (novasNotificacoes.length) {
+        salvarNotificacoes([...novasNotificacoes, ...notificacoes]);
+    }
+
+    return novasNotificacoes;
+}
+
+export function verificarAlertasSlaComercial({
+    cards = [],
+    papeisDestino = [],
+    diasLimite = DIAS_SLA_COMERCIAL_PADRAO,
+}) {
+    const notificacoes = lerNotificacoes();
+    const agora = new Date();
+    const novasNotificacoes = [];
+
+    cards.forEach((card) => {
+        const atualizadoEm = new Date(card.updatedAt || card.createdAt || 0);
+        if (Number.isNaN(atualizadoEm.getTime())) return;
+
+        const diasSemMovimento = Math.floor((agora.getTime() - atualizadoEm.getTime()) / MILISSEGUNDOS_POR_DIA);
+        if (diasSemMovimento <= diasLimite) return;
+
+        const updatedAtPadrao = obterDataIsoValida(card.updatedAt || card.createdAt);
+        const gerarNotificacaoSla = (tipo, mensagem) => {
+            const jaExiste = notificacoes.some(
+                (notificacao) =>
+                    notificacao.type === tipo
+                    && notificacao.boardKey === 'vendedor'
+                    && notificacao.cardId === card.id
+                    && notificacao.referenceUpdatedAt === updatedAtPadrao
+            );
+
+            if (jaExiste) return;
+
+            novasNotificacoes.push(
+                montarNotificacao({
+                    type: tipo,
+                    boardKey: 'vendedor',
+                    boardTitle: 'Kanban de Vendas',
+                    cardId: card.id,
+                    cardTitle: card.title,
+                    actorProfile: 'sistema',
+                    targetRoles: papeisDestino,
+                    referenceUpdatedAt: updatedAtPadrao,
+                    message: mensagem,
+                })
+            );
+        };
+
+        if (card.columnId === 'contato') {
+            gerarNotificacaoSla(
+                'sla-contato',
+                `${card.title} esta na etapa Contato ha ${diasSemMovimento} dias sem interacao.`
+            );
+        }
+
+        if (card.columnId === 'orcamento') {
+            gerarNotificacaoSla(
+                'sla-orcamento',
+                `${card.title} esta na etapa Orcamento ha ${diasSemMovimento} dias sem avancar para Fechamento.`
+            );
+        }
     });
 
     if (novasNotificacoes.length) {
