@@ -1,6 +1,8 @@
 const db = require('../config/database'); // Importa a conexão pool
 
 class NotificacaoComModel {
+    //Criar notificações
+
     // Busca todas as notificações de um funcionário específico (as mais recentes primeiro)
     static async findByFuncionario(funcionarioId) {
         const [rows] = await db.query(
