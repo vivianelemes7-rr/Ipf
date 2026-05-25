@@ -1,80 +1,94 @@
-### Configurações Iniciais
-@baseURL = http://localhost:3000/api/crm
-@id_do_card = 21
+# CRM comercial (Kanban) — /crm
+# Pré-requisito: @token com módulo vendas (testeAutenticacao.rest)
+
+@url_base = http://localhost:3000/crm
+@token =
+@id_do_card = 1
 @vendedor_id = 1
+@lead_id = 1
 
-### 1. Listar todos os cards do Kanban
-GET {{baseURL}}/
+### Listar todos os cards
+GET {{url_base}}/
 Accept: application/json
+Authorization: Bearer {{token}}
 
-### 2. Listar cards de um vendedor específico
-GET {{baseURL}}/?vendedor_id={{vendedor_id}}
+### Listar cards por vendedor
+GET {{url_base}}/?vendedor_id={{vendedor_id}}
 Accept: application/json
+Authorization: Bearer {{token}}
 
-### 3. Criar um novo card no CRM (Lead entrando no funil)
-POST {{baseURL}}/
+### Criar card no CRM
+POST {{url_base}}/
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-    "lead_id": 2,
-    "vendedor_id": 2,
-    "etapa_kanban": "Novo",
-    "valor_estimado": 1000.00,
-    "prioridade": 1,
-    "observacoes_venda": "Cliente precisa de revestimentos externos para casa."
+  "lead_id": {{lead_id}},
+  "vendedor_id": 1,
+  "etapa_kanban": "Novo",
+  "valor_estimado": 5500.00,
+  "prioridade": 2,
+  "observacoes_venda": "Cliente interessado em automação residencial."
 }
 
-### 4. Criar card sem lead_id (Erro esperado)
-POST {{baseURL}}/
+### Criar card sem lead_id (erro esperado)
+POST {{url_base}}/
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-    "vendedor_id": 1,
-    "etapa_kanban": "Primeiro Contato"
+  "vendedor_id": 1,
+  "etapa_kanban": "Primeiro Contato"
 }
 
-### 5. Atualizar dados do card (Movimentação de etapa)
-PUT {{baseURL}}/{{id_do_card}}
+### Atualizar card
+PUT {{url_base}}/{{id_do_card}}
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-    "etapa_kanban": "Finalização",
-    "valor_estimado": 6000.00,
-    "vendedor_id": 1
+  "etapa_kanban": "Proposta",
+  "valor_estimado": 6000.00,
+  "vendedor_id": 1
 }
 
-### 6. Finalizar Venda como GANHA (Gera Pedido)
-PATCH {{baseURL}}/{{id_do_card}}/ganho
+### Finalizar venda como GANHA
+PATCH {{url_base}}/{{id_do_card}}/ganho
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-    "numero_pedido": "PED-2026-001"
+  "numero_pedido": "PED-2026-001"
 }
 
-### 7. Finalizar com Número de Pedido Duplicado (Erro esperado)
-PATCH {{baseURL}}/99/ganho
+### Ganho com pedido duplicado (erro esperado)
+PATCH {{url_base}}/99/ganho
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-    "numero_pedido": "PED-2026-001"
+  "numero_pedido": "PED-2026-001"
 }
 
-### 8. Marcar Lead como PERDIDO
-PATCH {{baseURL}}/{{id_do_card}}/perdido
+### Marcar como PERDIDO
+PATCH {{url_base}}/{{id_do_card}}/perdido
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-    "motivo_perda": "Cliente achou o valor acima do orçamento atual."
+  "motivo_perda": "Cliente achou o valor acima do orçamento atual."
 }
 
-### 9. Marcar Perdido sem motivo (Erro esperado)
-PATCH {{baseURL}}/{{id_do_card}}/perdido
+### Perdido sem motivo (erro esperado)
+PATCH {{url_base}}/{{id_do_card}}/perdido
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-    "motivo_perda": ""
+  "motivo_perda": ""
 }
 
-### 10. Deletar um card do CRM
-DELETE {{baseURL}}/{{id_do_card}}
+### Deletar card
+DELETE {{url_base}}/{{id_do_card}}
 Accept: application/json
+Authorization: Bearer {{token}}

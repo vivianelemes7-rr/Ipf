@@ -1,75 +1,42 @@
 const NotificacaoComService = require('../services/notificacoes_comService');
+const { asyncHandler } = require('../utils/asyncHandler');
 
 class NotificacaoComController {
-    //Verificar saúde do servidor
-    static async healthCheck(req, res) {
-    return res.status(200).json({ 
-        status: "OK", 
-        timestamp: new Date(),
-        message: "Módulo de notificações comerciais operando normalmente." 
+    static listar = asyncHandler(async (req, res) => {
+        const { funcionarioId } = req.params;
+        const dados = await NotificacaoComService.obterPainelNotificacoes(funcionarioId);
+        res.status(200).json({ sucesso: true, dados });
     });
-    }
 
-    // Lista todas as notificações e o total de não lidas
-    static async listar(req, res) {
-        try {
-            const { funcionarioId } = req.params;
-            const dados = await NotificacaoComService.obterPainelNotificacoes(funcionarioId);
-            return res.status(200).json(dados);
-        } catch (error) {
-            return res.status(500).json({ error: error.message });
-        }
-    }
+    static marcarLida = asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        const resultado = await NotificacaoComService.marcarComoLida(id);
+        res.status(200).json({ sucesso: true, dados: resultado });
+    });
 
-    // Marca uma notificação específica como lida
-    static async marcarLida(req, res) {
-        try {
-            const { id } = req.params;
-            const resultado = await NotificacaoComService.marcarComoLida(id);
-            return res.status(200).json(resultado);
-        } catch (error) {
-            return res.status(404).json({ error: error.message });
-        }
-    }
+    static marcarTodasLidas = asyncHandler(async (req, res) => {
+        const { funcionarioId } = req.params;
+        await NotificacaoComService.lerTudo(funcionarioId);
+        res.status(200).json({
+            sucesso: true,
+            mensagem: 'Todas as notificações foram marcadas como lidas.'
+        });
+    });
 
-    // Marca todas as notificações de um funcionário como lidas
-    static async marcarTodasLidas(req, res) {
-        try {
-            const { funcionarioId } = req.params;
-            await NotificacaoComService.lerTudo(funcionarioId);
-            return res.status(200).json({ message: "Todas as notificações foram marcadas como lidas." });
-        } catch (error) {
-            return res.status(500).json({ error: error.message });
-        }
-    }
+    static excluir = asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        await NotificacaoComService.excluirNotificacao(id);
+        res.status(200).json({ sucesso: true, mensagem: 'Notificação excluída com sucesso.' });
+    });
 
-    // Exclui uma notificação
-    static async excluir(req, res) {
-        try {
-            const { id } = req.params;
-            await NotificacaoComService.excluirNotificacao(id);
-            return res.status(200).json({ message: "Notificação excluída com sucesso." });
-        } catch (error) {
-            return res.status(500).json({ error: error.message });
-        }
-    }
-
-    // Rota para disparar a automação manualmente (Útil para testes)
-    static async rodarAutomacao(req, res) {
-        try {
-            const totalGerado = await NotificacaoComService.verificarEGerarAlertasDeAtraso();
-            return res.status(200).json({ 
-                success: true,
-                message: "Automação executada com sucesso via requisição manual.", 
-                alertas_gerados: totalGerado 
-            });
-        } catch (error) {
-            return res.status(500).json({ 
-                success: false,
-                error: error.message 
-            });
-        }
-    }
+    static rodarAutomacao = asyncHandler(async (req, res) => {
+        const totalGerado = await NotificacaoComService.verificarEGerarAlertasDeAtraso();
+        res.status(200).json({
+            sucesso: true,
+            mensagem: 'Automação executada com sucesso.',
+            alertasGerados: totalGerado
+        });
+    });
 }
 
 module.exports = NotificacaoComController;

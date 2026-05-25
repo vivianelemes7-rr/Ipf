@@ -1,28 +1,25 @@
+const AppError = require('../utils/AppError');
 const NotificacaoModel = require('../models/notificacoes_comModel');
-const CRMModel = require('../models/crm_comercialModel'); // Necessário para a automação
+const CRMModel = require('../models/crm_comercialModel');
 
 class NotificacaoComService {
     
     // Painel Principal: Busca notificações e o contador para o Front-end
     static async obterPainelNotificacoes(funcionarioId) {
-        try {
-            const lista = await NotificacaoModel.findByFuncionario(funcionarioId);
-            const totalNaoLidas = await NotificacaoModel.countUnread(funcionarioId);
-            
-            return {
-                notificacoes: lista,
-                totalNaoLidas
-            };
-        } catch (error) {
-            throw new Error('Erro ao obter painel de notificações: ' + error.message);
-        }
+        const lista = await NotificacaoModel.findByFuncionario(funcionarioId);
+        const totalNaoLidas = await NotificacaoModel.countUnread(funcionarioId);
+
+        return {
+            notificacoes: lista,
+            totalNaoLidas
+        };
     }
 
     // Marcar uma notificação específica como lida
     static async marcarComoLida(id) {
         const affectedRows = await NotificacaoModel.markAsRead(id);
         if (affectedRows === 0) {
-            throw new Error('Notificação não encontrada ou já lida.');
+            throw AppError.notFound('Notificação não encontrada ou já lida.');
         }
         return { success: true, message: "Notificação atualizada." };
     }
@@ -36,7 +33,7 @@ class NotificacaoComService {
     static async excluirNotificacao(id) {
         const affectedRows = await NotificacaoModel.delete(id);
         if (affectedRows === 0) {
-            throw new Error('Não foi possível excluir: notificação não encontrada.');
+            throw AppError.notFound('Não foi possível excluir: notificação não encontrada.');
         }
         return { success: true };
     }
@@ -45,7 +42,7 @@ class NotificacaoComService {
     static async gerarAlerta(dados) {
         // Validação básica dos campos obrigatórios da sua tabela
         if (!dados.funcionario_id || !dados.titulo || !dados.mensagem) {
-            throw new Error('Campos obrigatórios ausentes para gerar notificação.');
+            throw AppError.badRequest('Campos obrigatórios ausentes para gerar notificação.');
         }
         return await NotificacaoModel.create(dados);
     }

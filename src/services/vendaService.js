@@ -1,3 +1,4 @@
+const AppError = require('../utils/AppError');
 const VendaModel = require('../models/vendaModel');
 const LeadModel = require('../models/leadModel');
 
@@ -6,7 +7,7 @@ const VendaService = {
         const lead = await LeadModel.buscarPorId(leadId);
         
         if (!lead) {
-            throw new Error('Lead não encontrado para conversão');
+            throw AppError.notFound('Lead não encontrado para conversão');
         }
 
         const novaVenda = await VendaModel.criarDaLead(leadId, detalhesTecnicos);

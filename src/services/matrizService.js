@@ -1,10 +1,11 @@
+const AppError = require('../utils/AppError');
 const MatrizModel = require('../models/matrizModel');
 
 const MatrizService = {
     processarRegraMatriz: async (pedidoId) => {
         const dados = await MatrizModel.getMatrizStatus(pedidoId);
         
-        if (!dados) throw new Error('Pedido não encontrado');
+        if (!dados) throw AppError.notFound('Pedido não encontrado');
 
         let statusFinal = 'Em processamento';
         const isEspecial = dados.tipo_pedido === 'Especial';

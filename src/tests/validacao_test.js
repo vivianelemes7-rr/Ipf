@@ -1,6 +1,8 @@
 // 🧪 Testes de Validação - Verificar Erros Potenciais
 // Executar com: node src/tests/validacao_test.js
 
+require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
+
 const http = require('http');
 
 const BASE_URL = 'http://localhost:3000';

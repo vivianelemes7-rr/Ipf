@@ -1,33 +1,26 @@
-### Configurações Globais
-@baseUrl = http://localhost:3000/api/notificacoes-com
-@funcionarioId = 1
-@notificacaoId = 1
+# Notificações comerciais — /notificacoes-com
+# Pré-requisito: @funcionario_id (após cadastro/aprovação em testeFuncionario.rest)
 
-### 1. Testar Saúde do Servidor (Aqui costuma ser na raiz da API ou no próprio recurso)
-GET http://localhost:3000/api/notificacoes-com/health
+@url_base = http://localhost:3000
+@funcionario_id = 1
+@notificacao_id = 1
+
+### Processar atrasos (simular cron)
+POST {{url_base}}/notificacoes-com/processar-atrasos
+Content-Type: application/json
+
+### Listar notificações do funcionário
+GET {{url_base}}/notificacoes-com/{{funcionario_id}}
 Accept: application/json
 
-### 2. Rodar Automação de Atrasos (Simular o Cron)
-# Ajustado: tirou a repetição da rota
-POST {{baseUrl}}/processar-atrasos
+### Marcar notificação como lida
+PATCH {{url_base}}/notificacoes-com/ler/{{notificacao_id}}
 Content-Type: application/json
 
-### 3. Listar Notificações do Funcionário
-# Ajustado: {{baseUrl}}/{{funcionarioId}}
-GET {{baseUrl}}/{{funcionarioId}}
-Accept: application/json
-
-### 4. Marcar uma Notificação como LIDA
-# Ajustado: {{baseUrl}}/ler/{{notificacaoId}}
-PATCH {{baseUrl}}/ler/{{notificacaoId}}
+### Marcar todas como lidas
+PATCH {{url_base}}/notificacoes-com/ler-tudo/{{funcionario_id}}
 Content-Type: application/json
 
-### 5. Marcar TODAS como lidas
-# Ajustado: {{baseUrl}}/ler-tudo/{{funcionarioId}}
-PATCH {{baseUrl}}/ler-tudo/{{funcionarioId}}
-Content-Type: application/json
-
-### 6. Excluir uma Notificação
-# Ajustado: {{baseUrl}}/{{notificacaoId}}
-DELETE {{baseUrl}}/{{notificacaoId}}
+### Excluir notificação
+DELETE {{url_base}}/notificacoes-com/{{notificacao_id}}
 Accept: application/json

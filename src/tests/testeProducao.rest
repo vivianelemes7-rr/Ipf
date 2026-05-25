@@ -1,0 +1,14 @@
+# Produção — /producao
+# Pré-requisito: @token com módulo produção
+
+@url_base = http://localhost:3000
+@token =
+@pedido_id = 1
+
+### Fila de produção
+GET {{url_base}}/producao/fila
+Authorization: Bearer {{token}}
+
+### Avançar pedido na produção
+POST {{url_base}}/producao/avancar/{{pedido_id}}
+Authorization: Bearer {{token}}
