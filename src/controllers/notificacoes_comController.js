@@ -1,7 +1,18 @@
+// Substitua TODO o conteúdo do seu notificacoes_comController.js por este código:
 const NotificacaoComService = require('../services/notificacoes_comService');
 const { asyncHandler } = require('../utils/asyncHandler');
 
 class NotificacaoComController {
+    
+    static healthCheck = asyncHandler(async (req, res) => {
+        return res.status(200).json({ 
+            sucesso: true,
+            status: "OK", 
+            timestamp: new Date(),
+            mensagem: "Módulo de notificações comerciais operando normalmente." 
+        });
+    });
+
     static listar = asyncHandler(async (req, res) => {
         const { funcionarioId } = req.params;
         const dados = await NotificacaoComService.obterPainelNotificacoes(funcionarioId);

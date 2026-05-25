@@ -3,6 +3,7 @@ const cors = require('cors');
 const leadRoutes = require('./routes/leadRoutes');
 const crmRoutes = require('./routes/crmRoutes');
 const notificacoesComRoutes = require('./routes/notificacoes_comRoutes');
+const notificacoesFinRoutes = require('./routes/notificacoes_finRoutes');
 const authRoutes = require('./routes/autenticacaoRoutes');
 const funcRoutes = require('./routes/funcionarioRoutes');
 const permissoesRoutes = require('./routes/permissoesRoutes');
@@ -23,6 +24,7 @@ app.get('/health', (req, res) => {
 app.use('/leads', leadRoutes);
 app.use('/crm', crmRoutes);
 app.use('/notificacoes-com', notificacoesComRoutes);
+app.use('/notificacoes-fin', notificacoesFinRoutes);
 app.use('/auth', authRoutes);
 app.use('/funcionarios', funcRoutes);
 app.use('/permissoes', permissoesRoutes);
