@@ -1,24 +1,28 @@
-const db = require('../config/database');
+const conexao = require('../config/database');
+
+const TABELAS_PERMITIDAS = ['kanban_producao', 'kanban_arquitetura'];
 
 const ProducaoModel = {
-    // Função para mover o pedido entre as etapas (Arquitetura -> Produção)
-    atualizarStatusFila: async (tabela, pedidoId, novoStatus) => {
-        const query = `UPDATE ${tabela} SET status_etapa = ? WHERE pedido_id = ?`;
-        const [result] = await db.query(query, [novoStatus, pedidoId]);
-        return result;
+    async atualizarStatusFila(tabela, pedidoId, novoStatus) {
+        if (!TABELAS_PERMITIDAS.includes(tabela)) {
+            throw new Error(`Acesso negado: Tabela '${tabela}' nao e permitida para atualizacao.`);
+        }
+
+        const query = `UPDATE ${tabela} SET etapa_kanban = ? WHERE pedido_id = ?`;
+        const [res] = await conexao.query(query, [novoStatus, pedidoId]);
+        return res.affectedRows;
     },
 
-    // Busca a lista de pedidos que estão na fábrica
-    listarFilaProducao: async () => {
+    async listarFilaProducao() {
         const query = `
-            SELECT p.id, p.cliente_nome, kp.status_etapa 
+            SELECT p.id, l.nome_contato AS cliente_nome, kp.etapa_kanban
             FROM pedidos p
             JOIN kanban_producao kp ON p.id = kp.pedido_id
+            LEFT JOIN leads l ON p.lead_id = l.id
             ORDER BY p.id ASC`;
-        const [rows] = await db.query(query);
-        return rows;
+        const [linhas] = await conexao.query(query);
+        return linhas;
     }
 };
 
 module.exports = ProducaoModel;
-
