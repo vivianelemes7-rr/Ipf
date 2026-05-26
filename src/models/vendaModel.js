@@ -1,15 +1,15 @@
-const db = require('../config/database');
+const conexao = require('../config/database');
 
 const VendaModel = {
-    criarDaLead: async (leadId, detalhesTecnicos) => {
+    async criarDaLead(leadId, detalhesTecnicos) {
         const query = 'INSERT INTO vendas (lead_id, detalhes_arquitetura, status_venda) VALUES (?, ?, ?)';
-        const [result] = await db.query(query, [leadId, detalhesTecnicos, 'Em Arquitetura']);
-        return result;
+        const [res] = await conexao.query(query, [leadId, detalhesTecnicos, 'Em Arquitetura']);
+        return { insertId: res.insertId };
     },
 
-    listar: async () => {
-        const [rows] = await db.query('SELECT * FROM vendas');
-        return rows;
+    async listar() {
+        const [linhas] = await conexao.query('SELECT * FROM vendas ORDER BY id');
+        return linhas;
     }
 };
 
