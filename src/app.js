@@ -1,4 +1,4 @@
-const express = require('express');
+onst express = require('express');
 const cors = require('cors');
 const leadRoutes = require('./routes/leadRoutes');
 const clienteRoutes = require('./routes/clienteRoutes');
