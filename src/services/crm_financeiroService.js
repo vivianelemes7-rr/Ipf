@@ -82,6 +82,8 @@ class CRMFinanceiroService {
         const cardFinanceiro = await CRMFinanceiroModel.findById(id);
         await PedidoService.avancarPedido(cardFinanceiro.pedido_id);
 
+        const NotificacaoGerenciaService = require('./notificacoes_gerenciaService');
+        await NotificacaoGerenciaService.gerarEventoFinanceiroLiberado(cardFinanceiro);
 
 
         return updatedRows;

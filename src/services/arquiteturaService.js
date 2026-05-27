@@ -43,6 +43,8 @@ const ArquiteturaService = {
         const ProducaoService = require('./producaoService');
         await ProducaoService.moverParaProducao(pedidoId);
 
+        const NotificacaoGerenciaService = require('./notificacoes_gerenciaService');
+        await NotificacaoGerenciaService.gerarEventoMatrizConfirmada({ pedido_id: pedidoId });
 
         return {
             sucesso: true,
