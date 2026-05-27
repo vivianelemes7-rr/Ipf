@@ -79,6 +79,38 @@ END$$
 
 DELIMITER ;
 
+-- 1. CRM comercial: campos usados pelo Kanban comercial e SLA de 7 dias.
+CALL ipf_add_column_if_missing('crm_comercial', 'data_primeiro_contato', 'DATETIME NULL', 'data_movimentacao');
+CALL ipf_add_column_if_missing('crm_comercial', 'data_envio_proposta', 'DATETIME NULL', 'data_primeiro_contato');
+CALL ipf_add_column_if_missing('crm_comercial', 'data_entrada_etapa', 'DATETIME NULL DEFAULT CURRENT_TIMESTAMP', 'data_envio_proposta');
+
+CALL ipf_modify_column_if_exists('crm_comercial', 'etapa_kanban', 'VARCHAR(50) DEFAULT ''Lead''');
+
+UPDATE crm_comercial
+SET etapa_kanban = CASE etapa_kanban
+    WHEN 'Novo' THEN 'Lead'
+    WHEN 'Triagem' THEN 'Lead'
+    WHEN 'Primeiro Contato' THEN 'Contato'
+    WHEN 'Proposta' THEN 'Orcamento'
+    WHEN 'Orçamento' THEN 'Orcamento'
+    WHEN 'Negociação' THEN 'Fechamento'
+    WHEN 'Negociacao' THEN 'Fechamento'
+    WHEN 'Finalizado' THEN 'Pedido'
+    ELSE etapa_kanban
+END,
+data_entrada_etapa = COALESCE(data_entrada_etapa, data_movimentacao, CURRENT_TIMESTAMP),
+data_primeiro_contato = CASE
+    WHEN etapa_kanban IN ('Contato', 'Primeiro Contato') THEN COALESCE(data_primeiro_contato, data_movimentacao, CURRENT_TIMESTAMP)
+    ELSE data_primeiro_contato
+END,
+data_envio_proposta = CASE
+    WHEN etapa_kanban IN ('Orcamento', 'Orçamento', 'Proposta') THEN COALESCE(data_envio_proposta, data_movimentacao, CURRENT_TIMESTAMP)
+    ELSE data_envio_proposta
+END;
+
+CALL ipf_add_index_if_missing('crm_comercial', 'idx_crm_etapa_sla', '(`etapa_kanban`, `status_final`, `data_entrada_etapa`)');
+CALL ipf_add_index_if_missing('crm_comercial', 'idx_crm_vendedor', '(`vendedor_id`)');
+
 -- 2. Pedidos: status Arquitetura e status usados no fluxo ponta a ponta.
 CALL ipf_modify_column_if_exists(
     'pedidos',

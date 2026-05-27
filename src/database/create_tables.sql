@@ -67,7 +67,7 @@ CREATE TABLE crm_comercial (
     vendedor_id BIGINT UNSIGNED, -- FK para a tabela(Funcionários)
     
     -- Campos do Kanban
-    etapa_kanban VARCHAR(50) DEFAULT 'Novo', -- Novo, Primeiro Contato, Proposta, Negociação
+    etapa_kanban VARCHAR(50) DEFAULT 'Lead', -- Lead, Contato, FUP1, Orcamento, FUP2, Fechamento, Cadastro, Pedido
     valor_estimado DECIMAL(10, 2),
     prioridade INT DEFAULT 2, -- 1: Alta, 2: Média, 3: Baixa
     previsao_fechamento DATE,
@@ -81,6 +81,9 @@ CREATE TABLE crm_comercial (
     numero_pedido VARCHAR(50) UNIQUE, -- Gerado manualmente ou por sistema externo
     
     data_movimentacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    data_primeiro_contato TIMESTAMP NULL,
+    data_envio_proposta TIMESTAMP NULL,
+    data_entrada_etapa TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     observacoes_venda TEXT,
 
     CONSTRAINT fk_vendedor_crm 

@@ -9,6 +9,16 @@
 POST {{url_base}}/notificacoes-com/processar-atrasos
 Content-Type: application/json
 
+### SLA esperado: lead parado em Contato por mais de 7 dias
+# Prepare um card em crm_comercial com etapa_kanban = "Contato" e data_entrada_etapa < NOW() - INTERVAL 7 DAY.
+POST {{url_base}}/notificacoes-com/processar-atrasos
+Content-Type: application/json
+
+### SLA esperado: lead parado em Orcamento por mais de 7 dias após proposta
+# Prepare um card em crm_comercial com etapa_kanban = "Orcamento" e data_entrada_etapa < NOW() - INTERVAL 7 DAY.
+POST {{url_base}}/notificacoes-com/processar-atrasos
+Content-Type: application/json
+
 ### Listar notificações do funcionário
 GET {{url_base}}/notificacoes-com/{{funcionario_id}}
 Accept: application/json

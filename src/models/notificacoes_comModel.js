@@ -50,6 +50,21 @@ class NotificacaoComModel {
         return result.insertId;
     }
 
+    static async findDuplicateOpen(notificacao) {
+        const [rows] = await db.query(
+            `SELECT id
+             FROM notificacoes_comercial
+             WHERE funcionario_id = ?
+               AND tipo_modulo = ?
+               AND item_id = ?
+               AND titulo = ?
+               AND lida = FALSE
+             LIMIT 1`,
+            [notificacao.funcionario_id, notificacao.tipo_modulo, notificacao.item_id, notificacao.titulo]
+        );
+        return rows[0] || null;
+    }
+
     // Marca uma notificação como lida
     static async markAsRead(id) {
         const [result] = await db.query(

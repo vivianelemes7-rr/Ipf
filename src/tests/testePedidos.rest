@@ -21,6 +21,10 @@ Authorization: Bearer {{token_vendas}}
 GET {{url_base}}/pedidos?status_pedido=Em Processamento
 Authorization: Bearer {{token_vendas}}
 
+### Listar pedidos com filtros do painel
+GET {{url_base}}/pedidos?status_pedido=Producao&cliente=Rocha&vendedor_id=1&tipo_pedido=Normal&data_inicio=2026-05-01&data_fim=2026-05-31
+Authorization: Bearer {{token_vendas}}
+
 ### Buscar pedido por ID
 GET {{url_base}}/pedidos/{{pedido_id}}
 Authorization: Bearer {{token_vendas}}
@@ -55,6 +59,16 @@ Content-Type: application/json
   "prazo_entrega_acordado": 30,
   "contrato_url": null,
   "projeto_referencia_url": null
+}
+
+### Venda ganha gerando pedido e financeiro
+PATCH {{url_base}}/crm/1/ganho
+Authorization: Bearer {{token_vendas}}
+Content-Type: application/json
+
+{
+  "numero_pedido": "PV-2026-CRM-001",
+  "tipo_pedido": "Especial"
 }
 
 ### Criar pedido sem numero_pedido (erro esperado 400)
