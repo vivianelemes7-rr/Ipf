@@ -28,8 +28,8 @@ class CRMComercialController {
 
     static setGanho = asyncHandler(async (req, res) => {
         const { id } = req.params;
-        const { numero_pedido } = req.body;
-        await CRMComercialService.finalizeWinningSale(id, numero_pedido);
+        const { numero_pedido, tipo_pedido } = req.body;
+        await CRMComercialService.finalizeWinningSale(id, numero_pedido, tipo_pedido);
         res.json({ sucesso: true, mensagem: 'Venda finalizada com sucesso! Pedido gerado.' });
     });
 

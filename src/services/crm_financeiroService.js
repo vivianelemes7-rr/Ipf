@@ -1,7 +1,5 @@
 const CRMFinanceiroModel = require("../models/crm_financeiroModel");
-
-// Importar para integração com Produção (Gatilho de Liberação)
-const ProducaoModel = require("../models/producaoModel"); 
+const PedidoService = require('./pedidoService');
 
 class CRMFinanceiroService {
     // Busca todos os cards do financeiro para o painel geral
@@ -56,20 +54,17 @@ class CRMFinanceiroService {
             throw new Error("O ID do registro é obrigatório para executar a liberação.");
         }
 
-        // 1. Executa a transação no Model (Aprova o financeiro e muda status_pedido para 'Produção')
+        // 1. Aprova o financeiro; o status do pedido é decidido no PedidoService.
         const updatedRows = await CRMFinanceiroModel.liberarParaProducao(id);
 
         if (updatedRows === 0) {
             throw new Error("Não foi possível processar a liberação. Registro não encontrado.");
         }
 
-        // 2. Gatilho automático de envio de pedido para Produção
+        // 2. Avanço centralizado do pedido: Normal vai para produção; Especial vai para arquitetura
         const cardFinanceiro = await CRMFinanceiroModel.findById(id);
-        await ProducaoModel.iniciarFilaProducao({
-            pedido_id: cardFinanceiro.pedido_id,
-            detalhes: 'Liberado pelo setor financeiro automaticamente.'
-        });
-        
+        await PedidoService.avancarPedido(cardFinanceiro.pedido_id);
+
 
         return updatedRows;
     }
