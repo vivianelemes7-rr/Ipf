@@ -1,0 +1,37 @@
+# Gerência — /gerencia
+# Pré-requisito: @token com cargo Gerente ou Administrador
+
+@url_base = http://localhost:3000
+@token =
+
+### Health check
+GET {{url_base}}/gerencia/health
+Authorization: Bearer {{token}}
+
+### Painel consolidado
+GET {{url_base}}/gerencia
+Authorization: Bearer {{token}}
+
+### Painel consolidado filtrado
+GET {{url_base}}/gerencia?status=Producao&data_inicio=2026-05-01&data_fim=2026-05-31
+Authorization: Bearer {{token}}
+
+### Indicadores por etapa e status
+GET {{url_base}}/gerencia/indicadores
+Authorization: Bearer {{token}}
+
+### Pedidos parados por setor
+GET {{url_base}}/gerencia/pedidos-parados?dias_limite=7
+Authorization: Bearer {{token}}
+
+### Pedidos atrasados
+GET {{url_base}}/gerencia/pedidos-atrasados
+Authorization: Bearer {{token}}
+
+### Visão por vendedor
+GET {{url_base}}/gerencia/vendedores
+Authorization: Bearer {{token}}
+
+### Visão por responsável operacional
+GET {{url_base}}/gerencia/responsaveis
+Authorization: Bearer {{token}}

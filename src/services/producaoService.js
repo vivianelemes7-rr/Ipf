@@ -123,6 +123,10 @@ async function notificarFinanceiroFinalizacao(card) {
     });
 }
 
+async function notificarGerenciaFinalizacao(card) {
+    const NotificacaoGerenciaService = require('./notificacoes_gerenciaService');
+    await NotificacaoGerenciaService.gerarEventoProducaoFinalizada(card);
+}
 
 const ProducaoService = {
     ETAPAS_PRODUCAO,
@@ -228,6 +232,7 @@ const ProducaoService = {
         if (novaEtapa === 'Expedicao') await notificarExpedicao(card);
         if (novaEtapa === 'Finalizado') {
             await notificarFinanceiroFinalizacao(card);
+            await notificarGerenciaFinalizacao(card);
         }
         return card;
     },

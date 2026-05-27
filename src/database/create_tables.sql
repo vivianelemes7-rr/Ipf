@@ -67,7 +67,7 @@ CREATE TABLE crm_comercial (
     vendedor_id BIGINT UNSIGNED, -- FK para a tabela(Funcionários)
     
     -- Campos do Kanban
-    etapa_kanban VARCHAR(50) DEFAULT 'Novo', -- Novo, Primeiro Contato, Proposta, Negociação
+    etapa_kanban VARCHAR(50) DEFAULT 'Lead', -- Lead, Contato, FUP1, Orcamento, FUP2, Fechamento, Cadastro, Pedido
     valor_estimado DECIMAL(10, 2),
     prioridade INT DEFAULT 2, -- 1: Alta, 2: Média, 3: Baixa
     previsao_fechamento DATE,
@@ -81,6 +81,9 @@ CREATE TABLE crm_comercial (
     numero_pedido VARCHAR(50) UNIQUE, -- Gerado manualmente ou por sistema externo
     
     data_movimentacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    data_primeiro_contato TIMESTAMP NULL,
+    data_envio_proposta TIMESTAMP NULL,
+    data_entrada_etapa TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     observacoes_venda TEXT,
 
     CONSTRAINT fk_vendedor_crm 
@@ -265,5 +268,20 @@ ALTER TABLE notificacoes_producao
 ADD CONSTRAINT fk_notif_prod_pedido
 FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE;
 
+-- 6. Tabela NOTIFICAÇÕES GERÊNCIA:
+CREATE TABLE notificacoes_gerencia (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    funcionario_id BIGINT UNSIGNED,
+    titulo VARCHAR(150) NOT NULL,
+    mensagem TEXT NOT NULL,
+    pedido_id BIGINT UNSIGNED NULL,
+    setor VARCHAR(50),
+    tipo_alerta VARCHAR(50),
+    prioridade_alerta ENUM('Normal', 'Urgente') DEFAULT 'Normal',
+    lida TINYINT(1) DEFAULT 0,
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (funcionario_id) REFERENCES funcionarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE
+);
 
 -- Se der tempo, verificar a criação de uma tabela de Leads Arquivados que se conectará com convertido na tabela de Lead.

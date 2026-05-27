@@ -25,7 +25,7 @@ Authorization: Bearer {{token}}
 {
   "lead_id": {{lead_id}},
   "vendedor_id": 1,
-  "etapa_kanban": "Novo",
+  "etapa_kanban": "Lead",
   "valor_estimado": 5500.00,
   "prioridade": 2,
   "observacoes_venda": "Cliente interessado em automação residencial."
@@ -38,7 +38,7 @@ Authorization: Bearer {{token}}
 
 {
   "vendedor_id": 1,
-  "etapa_kanban": "Primeiro Contato"
+  "etapa_kanban": "Contato"
 }
 
 ### Atualizar card
@@ -47,10 +47,35 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "etapa_kanban": "Proposta",
+  "etapa_kanban": "Orcamento",
   "valor_estimado": 6000.00,
   "vendedor_id": 1
 }
+
+### Mover etapa do card
+PATCH {{url_base}}/{{id_do_card}}/etapa
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "etapa_kanban": "Contato"
+}
+
+### Anexar proposta/orçamento
+PATCH {{url_base}}/{{id_do_card}}/proposta
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "proposta_url": "https://exemplo.com/propostas/proposta-001.pdf"
+}
+
+### Marcar proposta enviada
+PATCH {{url_base}}/{{id_do_card}}/proposta-enviada
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{}
 
 ### Finalizar venda como GANHA
 PATCH {{url_base}}/{{id_do_card}}/ganho
@@ -58,7 +83,8 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "numero_pedido": "PED-2026-001"
+  "numero_pedido": "PED-2026-001",
+  "tipo_pedido": "Normal"
 }
 
 ### Ganho com pedido duplicado (erro esperado)

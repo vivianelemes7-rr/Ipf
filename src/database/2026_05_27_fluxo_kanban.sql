@@ -79,6 +79,38 @@ END$$
 
 DELIMITER ;
 
+-- 1. CRM comercial: campos usados pelo Kanban comercial e SLA de 7 dias.
+CALL ipf_add_column_if_missing('crm_comercial', 'data_primeiro_contato', 'DATETIME NULL', 'data_movimentacao');
+CALL ipf_add_column_if_missing('crm_comercial', 'data_envio_proposta', 'DATETIME NULL', 'data_primeiro_contato');
+CALL ipf_add_column_if_missing('crm_comercial', 'data_entrada_etapa', 'DATETIME NULL DEFAULT CURRENT_TIMESTAMP', 'data_envio_proposta');
+
+CALL ipf_modify_column_if_exists('crm_comercial', 'etapa_kanban', 'VARCHAR(50) DEFAULT ''Lead''');
+
+UPDATE crm_comercial
+SET etapa_kanban = CASE etapa_kanban
+    WHEN 'Novo' THEN 'Lead'
+    WHEN 'Triagem' THEN 'Lead'
+    WHEN 'Primeiro Contato' THEN 'Contato'
+    WHEN 'Proposta' THEN 'Orcamento'
+    WHEN 'Orçamento' THEN 'Orcamento'
+    WHEN 'Negociação' THEN 'Fechamento'
+    WHEN 'Negociacao' THEN 'Fechamento'
+    WHEN 'Finalizado' THEN 'Pedido'
+    ELSE etapa_kanban
+END,
+data_entrada_etapa = COALESCE(data_entrada_etapa, data_movimentacao, CURRENT_TIMESTAMP),
+data_primeiro_contato = CASE
+    WHEN etapa_kanban IN ('Contato', 'Primeiro Contato') THEN COALESCE(data_primeiro_contato, data_movimentacao, CURRENT_TIMESTAMP)
+    ELSE data_primeiro_contato
+END,
+data_envio_proposta = CASE
+    WHEN etapa_kanban IN ('Orcamento', 'Orçamento', 'Proposta') THEN COALESCE(data_envio_proposta, data_movimentacao, CURRENT_TIMESTAMP)
+    ELSE data_envio_proposta
+END;
+
+CALL ipf_add_index_if_missing('crm_comercial', 'idx_crm_etapa_sla', '(`etapa_kanban`, `status_final`, `data_entrada_etapa`)');
+CALL ipf_add_index_if_missing('crm_comercial', 'idx_crm_vendedor', '(`vendedor_id`)');
+
 -- 2. Pedidos: status Arquitetura e status usados no fluxo ponta a ponta.
 CALL ipf_modify_column_if_exists(
     'pedidos',
@@ -154,6 +186,97 @@ CALL ipf_add_index_if_missing('notificacoes_comercial', 'idx_notif_com_item', '(
 CALL ipf_add_index_if_missing('notificacoes_financeiro', 'idx_notif_fin_func_lida', '(`funcionario_id`, `lida`)');
 CALL ipf_add_index_if_missing('notificacoes_financeiro', 'idx_notif_fin_pedido', '(`pedido_id`)');
 CALL ipf_add_index_if_missing('notificacoes_producao', 'idx_notif_prod_func_lida', '(`funcionario_id`, `lida`)');
+
+-- 8. Notificações gerenciais: nova API /notificacoes-gerencia.
+CREATE TABLE IF NOT EXISTS notificacoes_gerencia (
+    id INT NOT NULL AUTO_INCREMENT,
+    funcionario_id BIGINT UNSIGNED DEFAULT NULL,
+    titulo VARCHAR(150) NOT NULL,
+    mensagem TEXT NOT NULL,
+    pedido_id INT DEFAULT NULL,
+    setor VARCHAR(50) DEFAULT NULL,
+    tipo_alerta VARCHAR(50) DEFAULT NULL,
+    prioridade_alerta ENUM('Normal', 'Urgente') DEFAULT 'Normal',
+    lida TINYINT(1) DEFAULT 0,
+    data_criacao TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_notif_ger_func_lida (funcionario_id, lida),
+    KEY idx_notif_ger_pedido (pedido_id),
+    CONSTRAINT fk_notif_ger_funcionario FOREIGN KEY (funcionario_id) REFERENCES funcionarios(id) ON DELETE CASCADE,
+    CONSTRAINT fk_notif_ger_pedido FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE
+);
+
+-- Se a tabela ja existia sem todos os campos, completar o contrato.
+CALL ipf_add_column_if_missing('notificacoes_gerencia', 'funcionario_id', 'BIGINT UNSIGNED NULL', 'id');
+CALL ipf_add_column_if_missing('notificacoes_gerencia', 'titulo', 'VARCHAR(150) NOT NULL', 'funcionario_id');
+CALL ipf_add_column_if_missing('notificacoes_gerencia', 'mensagem', 'TEXT NOT NULL', 'titulo');
+CALL ipf_add_column_if_missing('notificacoes_gerencia', 'pedido_id', 'INT NULL', 'mensagem');
+CALL ipf_add_column_if_missing('notificacoes_gerencia', 'setor', 'VARCHAR(50) NULL', 'pedido_id');
+CALL ipf_add_column_if_missing('notificacoes_gerencia', 'tipo_alerta', 'VARCHAR(50) NULL', 'setor');
+CALL ipf_add_column_if_missing('notificacoes_gerencia', 'prioridade_alerta', 'ENUM(''Normal'', ''Urgente'') DEFAULT ''Normal''', 'tipo_alerta');
+CALL ipf_add_column_if_missing('notificacoes_gerencia', 'lida', 'TINYINT(1) DEFAULT 0', 'prioridade_alerta');
+CALL ipf_add_column_if_missing('notificacoes_gerencia', 'data_criacao', 'TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP', 'lida');
+CALL ipf_modify_column_if_exists('notificacoes_gerencia', 'funcionario_id', 'BIGINT UNSIGNED NULL');
+CALL ipf_modify_column_if_exists('notificacoes_gerencia', 'pedido_id', 'INT NULL');
+CALL ipf_add_index_if_missing('notificacoes_gerencia', 'idx_notif_ger_func_lida', '(`funcionario_id`, `lida`)');
+CALL ipf_add_index_if_missing('notificacoes_gerencia', 'idx_notif_ger_pedido', '(`pedido_id`)');
+
+-- 9. Kanban Gerencia: cards proprios e resumos de gestao.
+CREATE TABLE IF NOT EXISTS kanban_gerencia (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    etapa_kanban ENUM('Pendente', 'Em Andamento', 'Revisao', 'Aprovado') DEFAULT 'Pendente',
+    titulo VARCHAR(255) NOT NULL,
+    detalhes_json JSON DEFAULT NULL,
+    observacoes_gerenciais TEXT,
+    setor_origem ENUM('Vendas', 'Arquitetura', 'Financeiro', 'Producao', 'Gerencia') DEFAULT 'Gerencia',
+    tipo_card ENUM('Resumo Setor', 'Decisao', 'Aprovacao', 'Prioridade', 'Tarefa Interna') DEFAULT 'Tarefa Interna',
+    prioridade ENUM('Baixa', 'Media', 'Alta', 'Urgente') DEFAULT 'Media',
+    responsavel_gerencia_id BIGINT UNSIGNED DEFAULT NULL,
+    criado_por_id BIGINT UNSIGNED DEFAULT NULL,
+    atualizado_por_id BIGINT UNSIGNED DEFAULT NULL,
+    criado_por_perfil VARCHAR(50) DEFAULT NULL,
+    atualizado_por_perfil VARCHAR(50) DEFAULT NULL,
+    data_criacao TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    ultima_atualizacao TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_kanban_gerencia_etapa (etapa_kanban),
+    KEY idx_kanban_gerencia_setor (setor_origem),
+    KEY idx_kanban_gerencia_tipo (tipo_card),
+    KEY idx_kanban_gerencia_prioridade (prioridade),
+    KEY idx_kanban_gerencia_responsavel (responsavel_gerencia_id),
+    KEY idx_kanban_gerencia_atualizacao (ultima_atualizacao),
+    CONSTRAINT fk_kanban_gerencia_responsavel FOREIGN KEY (responsavel_gerencia_id) REFERENCES funcionarios(id) ON DELETE SET NULL,
+    CONSTRAINT fk_kanban_gerencia_criado_por FOREIGN KEY (criado_por_id) REFERENCES funcionarios(id) ON DELETE SET NULL,
+    CONSTRAINT fk_kanban_gerencia_atualizado_por FOREIGN KEY (atualizado_por_id) REFERENCES funcionarios(id) ON DELETE SET NULL
+);
+
+-- Se a tabela ja existia sem todos os campos, completar o contrato em portugues.
+CALL ipf_add_column_if_missing('kanban_gerencia', 'etapa_kanban', 'ENUM(''Pendente'', ''Em Andamento'', ''Revisao'', ''Aprovado'') DEFAULT ''Pendente''', 'id');
+CALL ipf_add_column_if_missing('kanban_gerencia', 'titulo', 'VARCHAR(255) NULL', 'etapa_kanban');
+CALL ipf_add_column_if_missing('kanban_gerencia', 'detalhes_json', 'JSON NULL', 'titulo');
+CALL ipf_add_column_if_missing('kanban_gerencia', 'observacoes_gerenciais', 'TEXT NULL', 'detalhes_json');
+CALL ipf_add_column_if_missing('kanban_gerencia', 'setor_origem', 'ENUM(''Vendas'', ''Arquitetura'', ''Financeiro'', ''Producao'', ''Gerencia'') DEFAULT ''Gerencia''', 'observacoes_gerenciais');
+CALL ipf_add_column_if_missing('kanban_gerencia', 'tipo_card', 'ENUM(''Resumo Setor'', ''Decisao'', ''Aprovacao'', ''Prioridade'', ''Tarefa Interna'') DEFAULT ''Tarefa Interna''', 'setor_origem');
+CALL ipf_add_column_if_missing('kanban_gerencia', 'prioridade', 'ENUM(''Baixa'', ''Media'', ''Alta'', ''Urgente'') DEFAULT ''Media''', 'tipo_card');
+CALL ipf_add_column_if_missing('kanban_gerencia', 'responsavel_gerencia_id', 'BIGINT UNSIGNED NULL', 'prioridade');
+CALL ipf_add_column_if_missing('kanban_gerencia', 'criado_por_id', 'BIGINT UNSIGNED NULL', 'responsavel_gerencia_id');
+CALL ipf_add_column_if_missing('kanban_gerencia', 'atualizado_por_id', 'BIGINT UNSIGNED NULL', 'criado_por_id');
+CALL ipf_add_column_if_missing('kanban_gerencia', 'criado_por_perfil', 'VARCHAR(50) NULL', 'atualizado_por_id');
+CALL ipf_add_column_if_missing('kanban_gerencia', 'atualizado_por_perfil', 'VARCHAR(50) NULL', 'criado_por_perfil');
+CALL ipf_add_column_if_missing('kanban_gerencia', 'data_criacao', 'TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP', 'atualizado_por_perfil');
+CALL ipf_add_column_if_missing('kanban_gerencia', 'ultima_atualizacao', 'TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP', 'data_criacao');
+CALL ipf_modify_column_if_exists('kanban_gerencia', 'etapa_kanban', 'ENUM(''Pendente'', ''Em Andamento'', ''Revisao'', ''Aprovado'') DEFAULT ''Pendente''');
+CALL ipf_modify_column_if_exists('kanban_gerencia', 'setor_origem', 'ENUM(''Vendas'', ''Arquitetura'', ''Financeiro'', ''Producao'', ''Gerencia'') DEFAULT ''Gerencia''');
+CALL ipf_modify_column_if_exists('kanban_gerencia', 'tipo_card', 'ENUM(''Resumo Setor'', ''Decisao'', ''Aprovacao'', ''Prioridade'', ''Tarefa Interna'') DEFAULT ''Tarefa Interna''');
+CALL ipf_modify_column_if_exists('kanban_gerencia', 'prioridade', 'ENUM(''Baixa'', ''Media'', ''Alta'', ''Urgente'') DEFAULT ''Media''');
+UPDATE kanban_gerencia SET titulo = COALESCE(titulo, CONCAT('Card gerencial ', id)) WHERE titulo IS NULL;
+CALL ipf_modify_column_if_exists('kanban_gerencia', 'titulo', 'VARCHAR(255) NOT NULL');
+CALL ipf_add_index_if_missing('kanban_gerencia', 'idx_kanban_gerencia_etapa', '(`etapa_kanban`)');
+CALL ipf_add_index_if_missing('kanban_gerencia', 'idx_kanban_gerencia_setor', '(`setor_origem`)');
+CALL ipf_add_index_if_missing('kanban_gerencia', 'idx_kanban_gerencia_tipo', '(`tipo_card`)');
+CALL ipf_add_index_if_missing('kanban_gerencia', 'idx_kanban_gerencia_prioridade', '(`prioridade`)');
+CALL ipf_add_index_if_missing('kanban_gerencia', 'idx_kanban_gerencia_responsavel', '(`responsavel_gerencia_id`)');
+CALL ipf_add_index_if_missing('kanban_gerencia', 'idx_kanban_gerencia_atualizacao', '(`ultima_atualizacao`)');
 
 -- 10. Seeds opcionais de permissão para Gerente/Administrador ja existentes.
 -- Nao cria usuarios. Apenas garante que perfis existentes tenham permissões coerentes.

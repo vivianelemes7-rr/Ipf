@@ -1,6 +1,7 @@
 const cron = require('node-cron');
 const NotificacaoComService = require('./services/notificacoes_comService');
 const NotificacaoProducaoService = require('./services/notificacoes_producaoService');
+const NotificacaoGerenciaService = require('./services/notificacoes_gerenciaService');
 
 // Importe aqui os outros serviços quando criá-los:
 // const NotificacaoArqService = require('./services/notificacoes_arqService');
@@ -19,6 +20,9 @@ const iniciarAgendamentos = () => {
 
             const producao = await NotificacaoProducaoService.verificarEGerarAlertasDeAtraso();
             console.log(`[PRODUCAO] ${producao} alertas processados.`);
+
+            const gerencia = await NotificacaoGerenciaService.processarAlertasCriticos();
+            console.log(`[GERENCIA] ${gerencia} alertas processados.`);
 
             // Futuramente, acrescente os outros setores aqui:
             // await NotificacaoArqService.verificarAtrasosProjetos();

@@ -44,13 +44,17 @@ class NotificacaoComService {
         if (!dados.funcionario_id || !dados.titulo || !dados.mensagem) {
             throw AppError.badRequest('Campos obrigatórios ausentes para gerar notificação.');
         }
+
+        const existente = await NotificacaoModel.findDuplicateOpen(dados);
+        if (existente) return existente.id;
+
         return await NotificacaoModel.create(dados);
     }
 
-    // AUTOMAÇÃO: Verifica se há cards parados há mais de X dias e gera alertas automaticamente (Ex: 2 dias)
+    // AUTOMAÇÃO: Verifica SLAs comerciais de 7 dias conforme UC03-UC06.
     static async verificarEGerarAlertasDeAtraso() {
         try {
-            const DIAS_LIMITE = 2; // Define a regra de negócio para o CRM Comercial
+            const DIAS_LIMITE = 7;
             
             console.log(`[Automação] Verificando cards parados há mais de ${DIAS_LIMITE} dias...`);
             
@@ -63,11 +67,14 @@ class NotificacaoComService {
             }
 
             // Mapeia os leads e cria as notificações em massa chamando o método static interno da classe
-            const promessas = leadsAtrasados.map(lead => {
+            const promessas = leadsAtrasados.filter(lead => lead.vendedor_id).map(lead => {
+                const alertaPrimeiroContato = lead.tipo_sla === 'primeiro_contato';
                 return NotificacaoComService.gerarAlerta({
                     funcionario_id: lead.vendedor_id,
-                    titulo: "Alerta de Inatividade",
-                    mensagem: `O lead "${lead.nome_contato}" está na etapa "${lead.etapa_kanban}" por muito tempo. Verifique a negociação.`,
+                    titulo: alertaPrimeiroContato ? 'SLA de primeiro contato estourado' : 'SLA de proposta estourado',
+                    mensagem: alertaPrimeiroContato
+                        ? `O lead "${lead.nome_contato}" está em Contato há mais de ${DIAS_LIMITE} dias. Realize o FUP.`
+                        : `O lead "${lead.nome_contato}" está em Orcamento há mais de ${DIAS_LIMITE} dias após proposta. Realize o follow-up.`,
                     tipo_modulo: 'Vendas',
                     item_id: lead.id,
                     prioridade_alerta: 'Urgente'

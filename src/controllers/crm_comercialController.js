@@ -26,11 +26,30 @@ class CRMComercialController {
         res.json({ sucesso: true, mensagem: 'Card atualizado com sucesso.' });
     });
 
+    static moverEtapa = asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        const { etapa_kanban, etapa } = req.body;
+        const card = await CRMComercialService.moverEtapa(id, etapa_kanban || etapa);
+        res.json({ sucesso: true, dados: card });
+    });
+
+    static anexarProposta = asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        const card = await CRMComercialService.anexarProposta(id, req.body.proposta_url);
+        res.json({ sucesso: true, dados: card });
+    });
+
+    static marcarPropostaEnviada = asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        const card = await CRMComercialService.marcarPropostaEnviada(id);
+        res.json({ sucesso: true, dados: card });
+    });
+
     static setGanho = asyncHandler(async (req, res) => {
         const { id } = req.params;
         const { numero_pedido, tipo_pedido } = req.body;
-        await CRMComercialService.finalizeWinningSale(id, numero_pedido, tipo_pedido);
-        res.json({ sucesso: true, mensagem: 'Venda finalizada com sucesso! Pedido gerado.' });
+        const resultado = await CRMComercialService.finalizeWinningSale(id, numero_pedido, tipo_pedido);
+        res.json({ sucesso: true, mensagem: 'Venda finalizada com sucesso! Pedido gerado.', dados: resultado });
     });
 
     static setPerdido = asyncHandler(async (req, res) => {

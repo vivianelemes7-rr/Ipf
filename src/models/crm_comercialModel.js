@@ -1,5 +1,33 @@
 const db = require('../config/database'); // Importa a conexão pool
 
+const ETAPAS_VENDAS = ['Lead', 'Contato', 'FUP1', 'Orcamento', 'FUP2', 'Fechamento', 'Cadastro', 'Pedido'];
+const CAMPOS_ATUALIZAVEIS = [
+    'etapa_kanban',
+    'valor_estimado',
+    'prioridade',
+    'previsao_fechamento',
+    'proposta_url',
+    'status_final',
+    'motivo_perda',
+    'pedido_gerado',
+    'observacoes_venda',
+    'vendedor_id',
+    'numero_pedido',
+    'data_primeiro_contato',
+    'data_envio_proposta',
+    'data_entrada_etapa'
+];
+
+function montarUpdate(dados) {
+    const campos = CAMPOS_ATUALIZAVEIS.filter((campo) => Object.prototype.hasOwnProperty.call(dados, campo));
+    if (campos.length === 0) return null;
+
+    return {
+        set: campos.map((campo) => `${campo} = ?`).join(', '),
+        valores: campos.map((campo) => dados[campo])
+    };
+}
+
 class CRMComercialModel {
     // Busca todos os registros do CRM com nomes de referências (Lead e Vendedor)
     static async findAll() {
@@ -7,7 +35,9 @@ class CRMComercialModel {
             FROM crm_comercial crm
             LEFT JOIN leads l ON crm.lead_id = l.id
             LEFT JOIN funcionarios f ON crm.vendedor_id = f.id
-            ORDER BY crm.prioridade ASC, crm.data_movimentacao DESC`;
+            ORDER BY FIELD(crm.etapa_kanban, 'Lead', 'Contato', 'FUP1', 'Orcamento', 'FUP2', 'Fechamento', 'Cadastro', 'Pedido'),
+                     crm.prioridade ASC,
+                     crm.data_movimentacao DESC`;
         const [rows] = await db.query(query);
         return rows;
     }
@@ -37,13 +67,22 @@ class CRMComercialModel {
         return rows[0];
     }
 
-    static async findIdleLeads(diasLimite = 2) {
+    static async findIdleLeads(diasLimite = 7) {
         const query = `
-            SELECT crm.id, crm.vendedor_id, crm.etapa_kanban, l.nome_contato
+            SELECT crm.id,
+                   crm.vendedor_id,
+                   crm.etapa_kanban,
+                   l.nome_contato,
+                   CASE
+                       WHEN crm.etapa_kanban = 'Contato' THEN 'primeiro_contato'
+                       WHEN crm.etapa_kanban = 'Orcamento' THEN 'proposta'
+                       ELSE 'follow_up'
+                   END AS tipo_sla
             FROM crm_comercial crm
             JOIN leads l ON crm.lead_id = l.id
             WHERE crm.status_final = 'Em Aberto'
-              AND crm.data_movimentacao < DATE_SUB(NOW(), INTERVAL ? DAY)`;
+              AND crm.etapa_kanban IN ('Contato', 'Orcamento')
+              AND COALESCE(crm.data_entrada_etapa, crm.data_movimentacao) < DATE_SUB(NOW(), INTERVAL ? DAY)`;
         const [rows] = await db.query(query, [diasLimite]);
         return rows;
     }
@@ -67,14 +106,14 @@ class CRMComercialModel {
             numero_pedido
         } = dados;
 
-        const query = `INSERT INTO crm_comercial 
-            (lead_id, vendedor_id, etapa_kanban, valor_estimado, prioridade, previsao_fechamento, proposta_url, observacoes_venda, numero_pedido) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        const query = `INSERT INTO crm_comercial
+            (lead_id, vendedor_id, etapa_kanban, valor_estimado, prioridade, previsao_fechamento, proposta_url, observacoes_venda, numero_pedido, data_entrada_etapa)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`;
 
         const [result] = await db.query(query, [
             lead_id,
             vendedor_id || null,
-            etapa_kanban || 'Triagem',
+            etapa_kanban || 'Lead',
             valor_estimado || 0,
             prioridade || 2,
             previsao_fechamento || null,
@@ -88,50 +127,53 @@ class CRMComercialModel {
 
     // Atualiza dados do card (Atualizado com numero_pedido)
     static async update(id, dados) {
-        const {
-            etapa_kanban,
-            valor_estimado,
-            prioridade,
-            previsao_fechamento,
-            proposta_url,
-            status_final,
-            motivo_perda,
-            pedido_gerado,
-            observacoes_venda,
-            vendedor_id,
-            numero_pedido // Adicionado
-        } = dados;
+        const update = montarUpdate(dados);
+        if (!update) return 0;
 
-        const query = `UPDATE crm_comercial SET 
-                etapa_kanban = ?, 
-                valor_estimado = ?, 
-                prioridade = ?, 
-                previsao_fechamento = ?, 
-                proposta_url = ?, 
-                status_final = ?, 
-                motivo_perda = ?, 
-                pedido_gerado = ?, 
-                observacoes_venda = ?,
-                vendedor_id = ?,
-                numero_pedido = ? 
-            WHERE id = ?
-        `;
+        const [result] = await db.query(
+            `UPDATE crm_comercial SET ${update.set}, data_movimentacao = CURRENT_TIMESTAMP WHERE id = ?`,
+            [...update.valores, id]
+        );
 
-        const [result] = await db.query(query, [
-            etapa_kanban,
-            valor_estimado,
-            prioridade,
-            previsao_fechamento,
-            proposta_url,
-            status_final,
-            motivo_perda,
-            pedido_gerado,
-            observacoes_venda,
-            vendedor_id,
-            numero_pedido, // Adicionado
-            id
-        ]);
+        return result.affectedRows;
+    }
 
+    static async moveStage(id, etapa) {
+        const [result] = await db.query(
+            `UPDATE crm_comercial
+             SET etapa_kanban = ?,
+                 data_entrada_etapa = CURRENT_TIMESTAMP,
+                 data_movimentacao = CURRENT_TIMESTAMP,
+                 data_primeiro_contato = CASE
+                     WHEN ? = 'Contato' AND data_primeiro_contato IS NULL THEN CURRENT_TIMESTAMP
+                     ELSE data_primeiro_contato
+                 END
+             WHERE id = ?`,
+            [etapa, etapa, id]
+        );
+        return result.affectedRows;
+    }
+
+    static async anexarProposta(id, propostaUrl) {
+        const [result] = await db.query(
+            `UPDATE crm_comercial
+             SET proposta_url = ?, data_movimentacao = CURRENT_TIMESTAMP
+             WHERE id = ?`,
+            [propostaUrl, id]
+        );
+        return result.affectedRows;
+    }
+
+    static async marcarPropostaEnviada(id) {
+        const [result] = await db.query(
+            `UPDATE crm_comercial
+             SET etapa_kanban = 'Orcamento',
+                 data_envio_proposta = CURRENT_TIMESTAMP,
+                 data_entrada_etapa = CURRENT_TIMESTAMP,
+                 data_movimentacao = CURRENT_TIMESTAMP
+             WHERE id = ?`,
+            [id]
+        );
         return result.affectedRows;
     }
 
@@ -141,7 +183,7 @@ class CRMComercialModel {
             UPDATE crm_comercial SET 
                 status_final = 'Ganho', 
                 data_ganho = CURRENT_TIMESTAMP,
-                etapa_kanban = 'Finalizado',
+                etapa_kanban = 'Pedido',
                 pedido_gerado = TRUE,
                 numero_pedido = ? 
             WHERE id = ?`;
@@ -165,5 +207,7 @@ class CRMComercialModel {
         return result.affectedRows;
     }
 }
+
+CRMComercialModel.ETAPAS_VENDAS = ETAPAS_VENDAS;
 
 module.exports = CRMComercialModel;
