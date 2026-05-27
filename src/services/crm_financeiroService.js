@@ -1,7 +1,13 @@
 const CRMFinanceiroModel = require("../models/crm_financeiroModel");
+const PedidoService = require('./pedidoService');
+const PedidoModel = require('../models/pedidoModel');
 
-// Importar para integração com Produção (Gatilho de Liberação)
-const ProducaoModel = require("../models/producaoModel"); 
+const ETAPAS_FECHAMENTO_OPERACIONAL = [
+    'Fiscal Concluido',
+    'Fiscal Concluído',
+    'Nota Fiscal Emitida',
+    'Fechamento Operacional'
+];
 
 class CRMFinanceiroService {
     // Busca todos os cards do financeiro para o painel geral
@@ -47,7 +53,16 @@ class CRMFinanceiroService {
         if (!id) {
             throw new Error("O ID do registro financeiro é obrigatório para atualização.");
         }
-        return await CRMFinanceiroModel.update(id, dados);
+        const updatedRows = await CRMFinanceiroModel.update(id, dados);
+
+        if (ETAPAS_FECHAMENTO_OPERACIONAL.includes(dados.etapa_kanban)) {
+            const cardFinanceiro = await CRMFinanceiroModel.findById(id);
+            if (cardFinanceiro?.pedido_id) {
+                await PedidoModel.atualizarStatus(cardFinanceiro.pedido_id, 'Finalizado');
+            }
+        }
+
+        return updatedRows;
     }
 
     // GATILHO: Liberar para Produção e Notificar Sistemas Paralelos
@@ -56,20 +71,18 @@ class CRMFinanceiroService {
             throw new Error("O ID do registro é obrigatório para executar a liberação.");
         }
 
-        // 1. Executa a transação no Model (Aprova o financeiro e muda status_pedido para 'Produção')
+        // 1. Aprova o financeiro; o status do pedido é decidido no PedidoService.
         const updatedRows = await CRMFinanceiroModel.liberarParaProducao(id);
 
         if (updatedRows === 0) {
             throw new Error("Não foi possível processar a liberação. Registro não encontrado.");
         }
 
-        // 2. Gatilho automático de envio de pedido para Produção
+        // 2. Avanço centralizado do pedido: Normal vai para produção; Especial vai para arquitetura
         const cardFinanceiro = await CRMFinanceiroModel.findById(id);
-        await ProducaoModel.iniciarFilaProducao({
-            pedido_id: cardFinanceiro.pedido_id,
-            detalhes: 'Liberado pelo setor financeiro automaticamente.'
-        });
-        
+        await PedidoService.avancarPedido(cardFinanceiro.pedido_id);
+
+
 
         return updatedRows;
     }

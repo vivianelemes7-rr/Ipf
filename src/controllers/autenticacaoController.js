@@ -39,26 +39,27 @@ const AutenticacaoController = {
         }
 
         if (!user.status_ativo) {
-            throw AppError.forbidden('Cadastro pendente. Aguarde aprovação do gerente.');
+            throw AppError.forbidden('Cadastro pendente. Aguarde aprovação de um administrador.');
         }
 
         const requestedCargo = cargoReq || roleReq;
+        const cargoNormalizadoUsuario = AutenticacaoService.normalizarCargo(user.cargo);
         if (requestedCargo) {
             const cargoNormalizadoSolicitado = AutenticacaoService.normalizarCargo(requestedCargo);
             if (!AutenticacaoService.isCargoValido(cargoNormalizadoSolicitado)) {
                 throw AppError.badRequest(
-                    'Cargo inválido no login. Valores válidos: vendedor, financeiro, produção, arquitetura, gerente.'
+                    'Cargo inválido no login. Valores válidos: vendedor, financeiro, produção, arquitetura, gerente, administrador.'
                 );
             }
 
-            if (/administrador/i.test(requestedCargo) && AutenticacaoService.normalizarCargo(user.cargo) !== 'gerente') {
-                throw AppError.forbidden('Acesso negado para cargo inexistente ou não autorizado.');
+            if (cargoNormalizadoSolicitado !== cargoNormalizadoUsuario) {
+                throw AppError.forbidden('Acesso negado para o cargo solicitado.');
             }
         }
 
         const token = AutenticacaoService.gerarToken(user);
         const cargoFormatado = AutenticacaoService.formatarCargo(user.cargo);
-        const role = AutenticacaoService.normalizarCargo(user.cargo);
+        const role = cargoNormalizadoUsuario;
 
         logger.info('LOGIN', `Sucesso: ${email}`);
         res.json({
@@ -88,24 +89,24 @@ const AutenticacaoController = {
         const { nome, email } = req.body;
         const senha = req.body.password || req.body.senha;
 
-        logger.info('CADASTRO_ADMIN', `Criando gerente: ${email}`);
+        logger.info('CADASTRO_ADMIN', `Criando administrador: ${email}`);
         const senhaHash = await AutenticacaoService.criptografarSenha(senha);
         const funcionarioId = await FuncionarioModel.criar({
             nome,
             email,
             senha: senhaHash,
-            cargo: 'Gerente',
+            cargo: AutenticacaoService.formatarCargoParaBanco('administrador'),
             departamento: 'Diretoria',
             status_ativo: true
         });
 
         await PermissoesModel.criar(
             funcionarioId,
-            PermissoesService.gerarPermissoesPorCargo('gerente')
+            PermissoesService.gerarPermissoesPorCargo('administrador')
         );
 
-        logger.info('CADASTRO_ADMIN', `Gerente criado: ${email}`);
-        res.status(201).json({ mensagem: 'Gerente criado com sucesso!' });
+        logger.info('CADASTRO_ADMIN', `Administrador criado: ${email}`);
+        res.status(201).json({ mensagem: 'Administrador criado com sucesso!' });
     }),
 
     alterarSenha: asyncHandler(async (req, res) => {

@@ -1,5 +1,17 @@
 const db = require('../config/database'); // Importa a conexão pool
 
+const CAMPOS_ATUALIZAVEIS = [
+    'responsavel_fin_id',
+    'etapa_kanban',
+    'valor_total_pedido',
+    'status_pagamento',
+    'custo_matriz_externa',
+    'matriz_externa_paga',
+    'liberado_para_producao',
+    'data_vencimento_proxima',
+    'observacoes_financeiras'
+];
+
 class CRMFinanceiroModel {
     // Busca todos os registros do Kanban Financeiro com os relacionamentos exatos da tabela pedidos
     static async findAll() {
@@ -104,60 +116,29 @@ class CRMFinanceiroModel {
 
     // Atualiza os dados do card
     static async update(id, dados) {
-        const {
-            responsavel_fin_id,
-            etapa_kanban,
-            valor_total_pedido,
-            status_pagamento,
-            custo_matriz_externa,
-            matriz_externa_paga,
-            liberado_para_producao,
-            data_vencimento_proxima,
-            observacoes_financeiras
-        } = dados;
+        const campos = CAMPOS_ATUALIZAVEIS.filter((campo) => Object.prototype.hasOwnProperty.call(dados, campo));
+        if (campos.length === 0) return 0;
 
-        const query = `UPDATE kanban_financeiro SET 
-                responsavel_fin_id = ?, 
-                etapa_kanban = ?, 
-                valor_total_pedido = ?, 
-                status_pagamento = ?, 
-                custo_matriz_externa = ?, 
-                matriz_externa_paga = ?, 
-                liberado_para_producao = ?, 
-                data_vencimento_proxima = ?, 
-                observacoes_financeiras = ?,
-                ultima_atualizacao = CURRENT_TIMESTAMP
-            WHERE id = ?`;
-
-        const [result] = await db.query(query, [
-            responsavel_fin_id,
-            etapa_kanban,
-            valor_total_pedido,
-            status_pagamento,
-            custo_matriz_externa,
-            matriz_externa_paga,
-            liberado_para_producao,
-            data_vencimento_proxima,
-            observacoes_financeiras,
-            id
-        ]);
+        const sets = campos.map((campo) => `${campo} = ?`).join(', ');
+        const valores = campos.map((campo) => dados[campo]);
+        const [result] = await db.query(
+            `UPDATE kanban_financeiro SET ${sets}, ultima_atualizacao = CURRENT_TIMESTAMP WHERE id = ?`,
+            [...valores, id]
+        );
 
         return result.affectedRows;
     }
 
-    // GATILHO UC11: Liberar para Produção (Atualizado com Transação)
+    // GATILHO UC11: Libera financeiro; o PedidoService decide Arquitetura ou Producao.
     static async liberarParaProducao(id) {
-        // 1. Pega uma conexão dedicada do pool para gerenciar a transação
         const connection = await db.getConnection();
         
         try {
-            // 2. Inicia a transação
             await connection.beginTransaction();
 
-            // Query A: Atualiza o Kanban Financeiro
             const queryFinanceiro = `UPDATE kanban_financeiro SET 
                     liberado_para_producao = TRUE,
-                    etapa_kanban = 'Confirmado UC11', -- Move automaticamente de coluna se desejar
+                    etapa_kanban = 'Confirmado UC11',
                     ultima_atualizacao = CURRENT_TIMESTAMP
                 WHERE id = ?`;
             const [resFinanceiro] = await connection.query(queryFinanceiro, [id]);
@@ -166,25 +147,15 @@ class CRMFinanceiroModel {
                 throw new Error('Card do financeiro não encontrado.');
             }
 
-            // Query B: Atualiza o status do Pedido vinculado para 'Produção'
-            // Usamos uma subquery para achar o pedido_id correto baseado no ID do kanban_financeiro
-            const queryPedido = `UPDATE pedidos 
-                SET status_pedido = 'Produção'
-                WHERE id = (SELECT pedido_id FROM kanban_financeiro WHERE id = ?)`;
-            await connection.query(queryPedido, [id]);
-
-            // 3. Se tudo deu certo, consolida as alterações no banco de dados
             await connection.commit();
             
             return resFinanceiro.affectedRows;
 
         } catch (error) {
-            // 4. Se qualquer uma das queries falhar, desfaz tudo que foi feito nesta tentativa
             await connection.rollback();
-            throw error; // Repassa o erro para o seu Controller tratar (ex: retornar status 500)
+            throw error;
             
         } finally {
-            // 5. IMPORTANTE: Libera a conexão de volta para o pool
             connection.release();
         }
     }

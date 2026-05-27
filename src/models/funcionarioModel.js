@@ -13,6 +13,16 @@ const FuncionarioModel = {
         return linhas;
     },
 
+    async listarPorCargo(cargo) {
+        const query = `
+            SELECT f.id, f.nome, f.email, f.cargo, f.status_ativo, f.departamento, f.data_cadastro
+            FROM funcionarios f
+            WHERE LOWER(f.cargo) = LOWER(?)
+            ORDER BY f.nome`;
+        const [linhas] = await conexao.query(query, [cargo]);
+        return linhas;
+    },
+
     async buscarPorId(id) {
         const query = `
             SELECT f.id, f.nome, f.email, f.cargo, f.status_ativo, f.departamento, f.data_cadastro
@@ -29,6 +39,16 @@ const FuncionarioModel = {
             WHERE f.email = ?`;
         const [linhas] = await conexao.query(query, [email]);
         return linhas[0];
+    },
+
+    async existeAdministradorAtivo() {
+        const query = `
+            SELECT COUNT(*) AS total
+            FROM funcionarios
+            WHERE LOWER(cargo) = 'administrador'
+              AND status_ativo = 1`;
+        const [linhas] = await conexao.query(query);
+        return Number(linhas[0]?.total || 0) > 0;
     },
 
     async criar(dadosFunc) {

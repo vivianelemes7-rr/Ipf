@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const AppError = require('../utils/AppError');
+const FuncionarioModel = require('../models/funcionarioModel');
 
 function extrairToken(auth) {
     if (!auth || typeof auth !== 'string') return null;
@@ -18,8 +19,13 @@ function permissaoAtiva(valor) {
     return valor === 1 || valor === true;
 }
 
-function isGerente(cargo) {
-    return String(cargo || '').trim().toLowerCase() === 'gerente';
+function normalizarCargo(cargo) {
+    const normalizado = String(cargo || '').trim().toLowerCase();
+    return normalizado === 'produção' ? 'producao' : normalizado;
+}
+
+function isAdministrador(cargo) {
+    return normalizarCargo(cargo) === 'administrador';
 }
 
 function autenticarRequisicao(req) {
@@ -45,14 +51,50 @@ const verificarToken = (req, res, next) => {
     }
 };
 
+const verificarCadastroAdmin = async (req, res, next) => {
+    try {
+        const existeAdministrador = await FuncionarioModel.existeAdministradorAtivo();
+        if (!existeAdministrador) {
+            return next();
+        }
+
+        req.usuario = req.usuario || autenticarRequisicao(req);
+        if (!isAdministrador(req.usuario.cargo)) {
+            throw AppError.forbidden('Apenas administradores podem criar outro administrador');
+        }
+
+        next();
+    } catch (erro) {
+        next(erro);
+    }
+};
+
 const verificarModulo = (modulo) => {
     return (req, res, next) => {
         try {
             req.usuario = req.usuario || autenticarRequisicao(req);
-            if (isGerente(req.usuario.cargo)) {
+            if (isAdministrador(req.usuario.cargo)) {
                 return next();
             }
             if (!permissaoAtiva(req.usuario?.permissoes?.[modulo])) {
+                throw AppError.forbidden('Acesso negado');
+            }
+            next();
+        } catch (erro) {
+            next(erro);
+        }
+    };
+};
+
+const verificarQualquerModulo = (modulos = []) => {
+    return (req, res, next) => {
+        try {
+            req.usuario = req.usuario || autenticarRequisicao(req);
+            if (isAdministrador(req.usuario.cargo)) {
+                return next();
+            }
+            const possuiModulo = modulos.some((modulo) => permissaoAtiva(req.usuario?.permissoes?.[modulo]));
+            if (!possuiModulo) {
                 throw AppError.forbidden('Acesso negado');
             }
             next();
@@ -71,14 +113,15 @@ const verificarAcesso = (cargos = [], modulo = null) => {
     return (req, res, next) => {
         try {
             req.usuario = req.usuario || autenticarRequisicao(req);
-            const cargoUsuario = String(req.usuario.cargo || '').trim().toLowerCase();
-            const cargosPermitidos = cargos.map(c => String(c || '').trim().toLowerCase());
+            const cargoUsuario = normalizarCargo(req.usuario.cargo);
+            const cargosPermitidos = cargos.map(c => normalizarCargo(c));
+            const usuarioAdministrador = isAdministrador(cargoUsuario);
             const cargoOk = cargos.length === 0
                 || cargosPermitidos.includes(cargoUsuario)
-                || cargoUsuario === 'gerente';
+                || usuarioAdministrador;
 
             let moduloOk = true;
-            if (modulo && !isGerente(req.usuario.cargo)) {
+            if (modulo && !usuarioAdministrador) {
                 moduloOk = permissaoAtiva(req.usuario.permissoes?.[modulo]);
             }
 
@@ -96,7 +139,7 @@ const checkPermission = (perm) => {
     return (req, res, next) => {
         try {
             req.usuario = req.usuario || autenticarRequisicao(req);
-            if (isGerente(req.usuario.cargo)) {
+            if (isAdministrador(req.usuario.cargo)) {
                 return next();
             }
 
@@ -118,10 +161,12 @@ const checkPermission = (perm) => {
 
 module.exports = {
     verificarToken,
+    verificarCadastroAdmin,
     verificarModuloVendas,
     verificarModuloFinanceiro,
     verificarModuloProducao,
     verificarModuloArquitetura,
+    verificarQualquerModulo,
     verificarAcesso,
     checkPermission
 };

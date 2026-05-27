@@ -1,6 +1,7 @@
 const PermissoesModel = require('../models/permissoesModel');
 const PermissoesService = require('../services/permissoesService');
 const FuncionarioModel = require('../models/funcionarioModel');
+const AutenticacaoService = require('../services/autenticacaoService');
 const AppError = require('../utils/AppError');
 const { asyncHandler } = require('../utils/asyncHandler');
 
@@ -42,15 +43,20 @@ const PermissoesController = {
             throw AppError.badRequest('Cargo é obrigatório');
         }
 
+        if (!AutenticacaoService.isCargoValido(cargo)) {
+            throw AppError.badRequest('Cargo inválido');
+        }
+
         const funcionario = await FuncionarioModel.buscarPorId(funcionarioId);
         if (!funcionario) {
             throw AppError.notFound('Funcionário não encontrado');
         }
 
-        const permissoes = PermissoesService.gerarPermissoesPorCargo(cargo);
+        const cargoBanco = AutenticacaoService.formatarCargoParaBanco(cargo);
+        const permissoes = PermissoesService.gerarPermissoesPorCargo(cargoBanco);
 
         await PermissoesModel.salvarOuAtualizar(funcionarioId, permissoes);
-        await FuncionarioModel.atualizarFuncionario(funcionarioId, { status_ativo: true, cargo });
+        await FuncionarioModel.atualizarFuncionario(funcionarioId, { status_ativo: true, cargo: cargoBanco });
 
         res.json({
             sucesso: true,

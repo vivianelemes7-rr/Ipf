@@ -36,7 +36,7 @@ const AutenticacaoService = {
     normalizarCargo(cargo) {
         if (!cargo || typeof cargo !== 'string') return '';
         const normalized = cargo.trim().toLowerCase();
-        if (normalized === 'administrador') return 'gerente';
+        if (normalized === 'produção') return 'producao';
         return normalized;
     },
 
@@ -45,7 +45,7 @@ const AutenticacaoService = {
     },
 
     isCargoValido(cargo) {
-        const cargosValidos = ['vendedor', 'financeiro', 'producao', 'produção', 'arquitetura', 'gerente'];
+        const cargosValidos = ['vendedor', 'financeiro', 'producao', 'arquitetura', 'gerente', 'administrador'];
         return cargosValidos.includes(AutenticacaoService.normalizarCargo(cargo));
     },
 
@@ -55,11 +55,29 @@ const AutenticacaoService = {
             vendedor: 'Vendedor',
             financeiro: 'Financeiro',
             producao: 'Produção',
-            'produção': 'Produção',
             arquitetura: 'Arquitetura',
-            gerente: 'Gerente'
+            gerente: 'Gerente',
+            administrador: 'Administrador'
         };
         return mapa[normalized] || cargo;
+    },
+
+    formatarCargoParaBanco(cargo) {
+        const normalized = AutenticacaoService.normalizarCargo(cargo);
+        const mapa = {
+            vendedor: 'Vendedor',
+            financeiro: 'Financeiro',
+            producao: 'Producao',
+            arquitetura: 'Arquitetura',
+            gerente: 'Gerente',
+            administrador: 'Administrador'
+        };
+
+        if (!mapa[normalized]) {
+            throw AppError.badRequest('Cargo inválido');
+        }
+
+        return mapa[normalized];
     },
 
     gerarToken(u) {
@@ -67,8 +85,8 @@ const AutenticacaoService = {
         const cargoNormalizado = AutenticacaoService.normalizarCargo(u.cargo);
         const cargoFormatado = AutenticacaoService.formatarCargo(cargoNormalizado);
 
-        const permissoes = cargoNormalizado === 'gerente'
-            ? PermissoesService.gerarPermissoesPorCargo('gerente')
+        const permissoes = ['administrador', 'gerente'].includes(cargoNormalizado)
+            ? PermissoesService.gerarPermissoesPorCargo(cargoNormalizado)
             : {
                 modulo_vendas: u.modulo_vendas,
                 modulo_financeiro: u.modulo_financeiro,
@@ -98,6 +116,7 @@ const AutenticacaoService = {
             id: u.id,
             email: u.email,
             cargo: cargoFormatado,
+            role: cargoNormalizado,
             permissoes
         }, process.env.JWT_SECRET, { expiresIn: '1h' });
     }

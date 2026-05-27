@@ -1,7 +1,8 @@
 const AppError = require('../utils/AppError');
 const CRMComercialModel = require("../models/crm_comercialModel");
+const PedidoModel = require("../models/pedidoModel");
 const VendaModel = require("../models/vendaModel");
-const ProducaoModel = require("../models/producaoModel");
+const PedidoService = require('./pedidoService');
 
 class CRMComercialService {
     static async getAllCards() {
@@ -32,26 +33,46 @@ class CRMComercialService {
         return await CRMComercialModel.update(id, dados);
     }
 
-    static async finalizeWinningSale(id, numero_pedido) {
+    static async finalizeWinningSale(id, numero_pedido, tipo_pedido = 'Normal') {
         if (!numero_pedido) {
             throw AppError.badRequest('É necessário informar o número do pedido para finalizar a venda.');
         }
+        PedidoService.validarTipoPedido(tipo_pedido);
 
         const existingPedido = await CRMComercialModel.findByNumeroPedido(numero_pedido);
         if (existingPedido && existingPedido.id !== parseInt(id)) {
             throw AppError.conflict('Este número de pedido já foi utilizado em outra negociação.');
         }
 
+        const pedidoExistente = await PedidoModel.buscarPedidoPorNumero(numero_pedido);
+        if (pedidoExistente) {
+            throw AppError.conflict('Este número de pedido já existe em pedidos.');
+        }
+
+        const cardAntesDoGanho = await CRMComercialModel.findById(id);
+        if (!cardAntesDoGanho) {
+            throw AppError.notFound('Card do CRM não encontrado.');
+        }
+
         // 1. Marca como Ganho no CRM
         const updatedRows = await CRMComercialModel.markAsWon(id, numero_pedido);
-        
+
         if (updatedRows > 0) {
-            // 2. Busca os dados do card para transferir para a Venda
-            const card = await CRMComercialModel.findById(id);
-            
-            // 3. CRIAÇÃO DA VENDA (Conexão com setor de Projetos/Arquitetura)
-            await VendaModel.criarDaLead(card.lead_id, card.observacoes_venda || 'Pedido gerado via CRM');
-            
+            // 2. Mantém compatibilidade com o fluxo antigo de vendas
+            await VendaModel.criarDaLead(cardAntesDoGanho.lead_id, cardAntesDoGanho.observacoes_venda || 'Pedido gerado via CRM');
+
+            // 3. Cria o pedido real e inicia o fluxo financeiro
+            await PedidoService.criarPedido({
+                crm_id: Number(id),
+                lead_id: cardAntesDoGanho.lead_id,
+                numero_pedido,
+                tipo_pedido,
+                valor_total_fechado: cardAntesDoGanho.valor_estimado || 0,
+                descricao_itens_servicos: cardAntesDoGanho.observacoes_venda || 'Pedido gerado via CRM',
+                prazo_entrega_acordado: null,
+                contrato_url: null,
+                projeto_referencia_url: cardAntesDoGanho.proposta_url || null
+            });
         }
 
         return updatedRows;

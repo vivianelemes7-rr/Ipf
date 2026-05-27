@@ -54,4 +54,23 @@ class NotificacaoArqService {
             const promessas = pendencias.map(pendencia => {
                 return NotificacaoArqService.gerarAlerta({
                     funcionario_id: pendencia.funcionario_id,
-                    titulo: 'Cobrança de Matriz Extern
+                    titulo: 'Cobrança de Matriz Externa',
+                    mensagem: `Pedido ${pendencia.pedido_id} possui matriz externa pendente há mais de ${DIAS_LIMITE} dias.`,
+                    tipo_modulo: 'Arquitetura',
+                    item_id: pendencia.pedido_id,
+                    prioridade_alerta: 'Urgente',
+                    data_cobranca_matriz: new Date()
+                });
+            });
+
+            await Promise.all(promessas);
+            console.log(`[Automação Arquitetura] ${promessas.length} alerta(s) gerado(s).`);
+            return promessas.length;
+        } catch (erro) {
+            console.error('[Automação Arquitetura] Erro ao verificar atrasos:', erro.message);
+            throw erro;
+        }
+    }
+}
+
+module.exports = NotificacaoArqService;

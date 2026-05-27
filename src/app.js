@@ -1,14 +1,18 @@
 const express = require('express');
 const cors = require('cors');
 const leadRoutes = require('./routes/leadRoutes');
+const clienteRoutes = require('./routes/clienteRoutes');
 const crmRoutes = require('./routes/crmRoutes');
+const crmFinanceiroRoutes = require('./routes/crmFinanceiroRoutes');
 const notificacoesComRoutes = require('./routes/notificacoes_comRoutes');
 const notificacoesFinRoutes = require('./routes/notificacoes_finRoutes');
 const notificacoesArqRoutes = require('./routes/notificacoes_arqRoutes');
+const notificacoesProducaoRoutes = require('./routes/notificacoes_producaoRoutes');
 const authRoutes = require('./routes/autenticacaoRoutes');
 const funcRoutes = require('./routes/funcionarioRoutes');
 const permissoesRoutes = require('./routes/permissoesRoutes');
 const producaoRoutes = require('./routes/producaoRoutes');
+const pedidoRoutes = require('./routes/pedidoRoutes');
 const matrizRoutes = require('./routes/matrizRoutes');
 const vendaRoutes = require('./routes/vendaRoutes');
 const arquiteturaRoutes = require('./routes/arquiteturaRoutes');
@@ -24,22 +28,27 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/leads', leadRoutes);
+app.use('/clientes', clienteRoutes);
 app.use('/crm', crmRoutes);
+app.use('/crm', crmFinanceiroRoutes);
 app.use('/notificacoes-com', notificacoesComRoutes);
 app.use('/notificacoes-fin', notificacoesFinRoutes);
 app.use('/notificacoes-arq', notificacoesArqRoutes);
+app.use('/notificacoes-producao', notificacoesProducaoRoutes);
 app.use('/auth', authRoutes);
 app.use('/funcionarios', funcRoutes);
 app.use('/permissoes', permissoesRoutes);
 app.use('/producao', producaoRoutes);
+app.use('/pedidos', pedidoRoutes);
 app.use('/matriz', matrizRoutes);
 app.use('/vendas', vendaRoutes);
 app.use('/arquitetura', arquiteturaRoutes);
 
 const PREFIXOS_API = [
-    '/auth', '/funcionarios', '/permissoes', '/leads', '/crm',
-    '/vendas', '/producao', '/matriz', '/notificacoes-com',
-    '/notificacoes-fin', '/notificacoes-arq', '/arquitetura'
+    '/auth', '/funcionarios', '/permissoes', '/leads', '/clientes', '/crm',
+    '/vendas', '/producao', '/pedidos', '/matriz', '/notificacoes-com',
+    '/notificacoes-fin', '/notificacoes-arq', '/notificacoes-producao',
+    '/arquitetura'
 ];
 
 app.use((req, res, next) => {
