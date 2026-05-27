@@ -1,13 +1,16 @@
 const express = require('express');
 const cors = require('cors');
 const leadRoutes = require('./routes/leadRoutes');
+const clienteRoutes = require('./routes/clienteRoutes');
 const crmRoutes = require('./routes/crmRoutes');
+const crmFinanceiroRoutes = require('./routes/crmFinanceiroRoutes');
 const notificacoesComRoutes = require('./routes/notificacoes_comRoutes');
 const notificacoesFinRoutes = require('./routes/notificacoes_finRoutes');
 const authRoutes = require('./routes/autenticacaoRoutes');
 const funcRoutes = require('./routes/funcionarioRoutes');
 const permissoesRoutes = require('./routes/permissoesRoutes');
 const producaoRoutes = require('./routes/producaoRoutes');
+const pedidoRoutes = require('./routes/pedidoRoutes');
 const matrizRoutes = require('./routes/matrizRoutes');
 const vendaRoutes = require('./routes/vendaRoutes');
 const { manipuladorErros, rotaNaoEncontrada } = require('./middlewares/erroMiddleware');
@@ -22,19 +25,22 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/leads', leadRoutes);
+app.use('/clientes', clienteRoutes);
 app.use('/crm', crmRoutes);
+app.use('/crm', crmFinanceiroRoutes);
 app.use('/notificacoes-com', notificacoesComRoutes);
 app.use('/notificacoes-fin', notificacoesFinRoutes);
 app.use('/auth', authRoutes);
 app.use('/funcionarios', funcRoutes);
 app.use('/permissoes', permissoesRoutes);
 app.use('/producao', producaoRoutes);
+app.use('/pedidos', pedidoRoutes);
 app.use('/matriz', matrizRoutes);
 app.use('/vendas', vendaRoutes);
 
 const PREFIXOS_API = [
-    '/auth', '/funcionarios', '/permissoes', '/leads', '/crm',
-    '/vendas', '/producao', '/matriz', '/notificacoes-com'
+    '/auth', '/funcionarios', '/permissoes', '/leads', '/clientes', '/crm',
+    '/vendas', '/producao', '/pedidos', '/matriz', '/notificacoes-com', '/notificacoes-fin'
 ];
 
 app.use((req, res, next) => {
