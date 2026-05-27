@@ -1,4 +1,4 @@
-onst express = require('express');
+const express = require('express');
 const cors = require('cors');
 const leadRoutes = require('./routes/leadRoutes');
 const crmRoutes = require('./routes/crmRoutes');

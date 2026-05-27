@@ -1,0 +1,27 @@
+# Arquitetura — /arquitetura
+# Pré-requisito: @token com módulo arquitetura
+
+@url_base = http://localhost:3000
+@token =
+@pedido_id = 1
+
+### Listar fila de arquitetura
+GET {{url_base}}/arquitetura/fila
+Authorization: Bearer {{token}}
+
+### Buscar pedido específico
+GET {{url_base}}/arquitetura/{{pedido_id}}
+Authorization: Bearer {{token}}
+
+### Atualizar etapa do card
+PATCH {{url_base}}/arquitetura/{{pedido_id}}/etapa
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "etapa": "em_desenho"
+}
+
+### UC14: Confirmar recebimento de matriz externa
+PATCH {{url_base}}/arquitetura/{{pedido_id}}/confirmar-matriz
+Authorization: Bearer {{token}}
