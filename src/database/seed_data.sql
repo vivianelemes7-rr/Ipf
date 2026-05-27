@@ -4,10 +4,10 @@
 -- 1. Criar Dados Tabelas FUNCIONÁRIOS--
 -- 1.1. Dados Tabela FUNCIONÁRIOS:
 INSERT INTO funcionarios (nome, email, senha, cargo, departamento) VALUES
-('Bruno Silva', 'bruno@empresaficticia.com.br', 'hash_senha_1', 'Consultor Comercial', 'Vendas'),
-('Carla Souza', 'carla@empresaficticia.com.br', 'hash_senha_2', 'Arquiteta Pleno', 'Projetos'),
-('Daniel Oliveira', 'daniel@empresaficticia.com.br', 'hash_senha_3', 'Analista Financeiro', 'Financeiro'),
-('Eduardo Santos', 'eduardo@empresaficticia.com.br', 'hash_senha_4', 'Supervisor de Fábrica', 'Produção');
+('Bruno Silva', 'bruno@empresaficticia.com.br', 'hash_senha_1', 'Vendedor', 'Vendas'),
+('Carla Souza', 'carla@empresaficticia.com.br', 'hash_senha_2', 'Arquitetura', 'Projetos'),
+('Daniel Oliveira', 'daniel@empresaficticia.com.br', 'hash_senha_3', 'Financeiro', 'Financeiro'),
+('Eduardo Santos', 'eduardo@empresaficticia.com.br', 'hash_senha_4', 'Producao', 'Produção');
 
 -- 1.2. Dados Tabela PERMISSÕES:
 INSERT INTO permissoes (funcionario_id, modulo_vendas, modulo_financeiro, modulo_producao, modulo_arquitetura, pode_deletar, ver_apenas_proprio) VALUES
