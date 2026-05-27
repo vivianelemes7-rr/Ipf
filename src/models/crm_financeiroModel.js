@@ -1,5 +1,17 @@
 const db = require('../config/database'); // Importa a conexão pool
 
+const CAMPOS_ATUALIZAVEIS = [
+    'responsavel_fin_id',
+    'etapa_kanban',
+    'valor_total_pedido',
+    'status_pagamento',
+    'custo_matriz_externa',
+    'matriz_externa_paga',
+    'liberado_para_producao',
+    'data_vencimento_proxima',
+    'observacoes_financeiras'
+];
+
 class CRMFinanceiroModel {
     // Busca todos os registros do Kanban Financeiro com os relacionamentos exatos da tabela pedidos
     static async findAll() {
@@ -104,43 +116,15 @@ class CRMFinanceiroModel {
 
     // Atualiza os dados do card
     static async update(id, dados) {
-        const {
-            responsavel_fin_id,
-            etapa_kanban,
-            valor_total_pedido,
-            status_pagamento,
-            custo_matriz_externa,
-            matriz_externa_paga,
-            liberado_para_producao,
-            data_vencimento_proxima,
-            observacoes_financeiras
-        } = dados;
+        const campos = CAMPOS_ATUALIZAVEIS.filter((campo) => Object.prototype.hasOwnProperty.call(dados, campo));
+        if (campos.length === 0) return 0;
 
-        const query = `UPDATE kanban_financeiro SET 
-                responsavel_fin_id = ?, 
-                etapa_kanban = ?, 
-                valor_total_pedido = ?, 
-                status_pagamento = ?, 
-                custo_matriz_externa = ?, 
-                matriz_externa_paga = ?, 
-                liberado_para_producao = ?, 
-                data_vencimento_proxima = ?, 
-                observacoes_financeiras = ?,
-                ultima_atualizacao = CURRENT_TIMESTAMP
-            WHERE id = ?`;
-
-        const [result] = await db.query(query, [
-            responsavel_fin_id,
-            etapa_kanban,
-            valor_total_pedido,
-            status_pagamento,
-            custo_matriz_externa,
-            matriz_externa_paga,
-            liberado_para_producao,
-            data_vencimento_proxima,
-            observacoes_financeiras,
-            id
-        ]);
+        const sets = campos.map((campo) => `${campo} = ?`).join(', ');
+        const valores = campos.map((campo) => dados[campo]);
+        const [result] = await db.query(
+            `UPDATE kanban_financeiro SET ${sets}, ultima_atualizacao = CURRENT_TIMESTAMP WHERE id = ?`,
+            [...valores, id]
+        );
 
         return result.affectedRows;
     }

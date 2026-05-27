@@ -40,6 +40,10 @@ const ArquiteturaService = {
         const afetados = await ArquiteturaModel.confirmarRecebimentoMatriz(pedidoId);
         if (afetados === 0) throw AppError.internal('Não foi possível confirmar recebimento');
 
+        const ProducaoService = require('./producaoService');
+        await ProducaoService.moverParaProducao(pedidoId);
+
+
         return {
             sucesso: true,
             mensagem: `Matriz do pedido ${pedidoId} confirmada. Card movido para Produção.`

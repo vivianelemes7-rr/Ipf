@@ -35,7 +35,7 @@ INSERT INTO leads (nome_contato, empresa, cpf_cnpj, telefone, email, endereco_co
 
 -- 2.3 Dados Tabela PEDIDOS:
 INSERT INTO pedidos (crm_id, lead_id, numero_pedido, tipo_pedido, valor_total_fechado, descricao_itens_servicos, prazo_entrega_acordado, status_pedido) VALUES
-(1, 1, 'PV-2026-0001', 'Especial (Matriz)', 15500.00, 'Fabricação de painéis sob medida com matriz personalizada em aço.', 30, 'Em Processamento');
+(1, 1, 'PV-2026-0001', 'Especial', 15500.00, 'Fabricação de painéis sob medida com matriz personalizada em aço.', 30, 'Em Processamento');
 
 -- 2.4 Dados Tabela NOTIFICAÇÕES:
 INSERT INTO notificacoes_comercial (funcionario_id, titulo, mensagem, tipo_modulo, item_id) VALUES
@@ -44,7 +44,7 @@ INSERT INTO notificacoes_comercial (funcionario_id, titulo, mensagem, tipo_modul
 -- 3. Criar Dados Tabelas Arquitetura--
 -- 3.1 Dados Tabela Arquitetura:
 INSERT INTO kanban_arquitetura (pedido_id, arquiteto_id, etapa_kanban, requer_matriz_externa, desenho_enviado_externo, data_envio_externo, previsao_retorno_externo, link_projeto_drive) VALUES
-(1, 2, 'Detalhamento', TRUE, TRUE, CURRENT_TIMESTAMP, '2026-05-10', 'https://drive.google.com/drive/folders/projeto_rocha_001');
+(1, 2, 'Producao Matriz', TRUE, TRUE, CURRENT_TIMESTAMP, '2026-05-10', 'https://drive.google.com/drive/folders/projeto_rocha_001');
 
 -- 3.2 Dados Tabela Notificação Arquitetura:
 INSERT INTO notificacoes_arquitetura (funcionario_id, titulo, mensagem, tipo_notificacao, pedido_id) VALUES
@@ -62,7 +62,7 @@ INSERT INTO notificacoes_financeiro (funcionario_id, titulo, mensagem, pedido_id
 -- 5. Criar Dados Criar Tabelas Produção--
 -- 5.1 Dados Tabela Produção:
 INSERT INTO kanban_producao (pedido_id, arquitetura_id, financeiro_id, etapa_kanban, tipo_producao, matriz_chegou_externa, responsavel_producao_id) VALUES
-(1, 1, 1, 'Aguardando Liberação', 'Especial (Matriz)', FALSE, 4);
+(1, 1, 1, 'Aguardando Matriz', 'Especial', FALSE, 4);
 
 -- 5.2 Dados Tabela Notificações Produção:
 INSERT INTO notificacoes_producao (funcionario_id, titulo, mensagem, pedido_id, prioridade_alerta) VALUES

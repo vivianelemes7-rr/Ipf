@@ -30,8 +30,9 @@ const ArquiteturaModel = {
 
     async atualizarEtapa(pedidoId, novaEtapa) {
         const etapasPermitidas = [
-            'aguardando', 'em_desenho', 'producao_matriz',
-            'fup', 'matriz_pronta', 'conferencia_matriz', 'producao'
+            'Aguardando', 'Em Desenho', 'Producao Matriz',
+            'FUP', 'Matriz Pronta', 'Conferencia Matriz', 'Producao',
+            'Briefing', 'Medicao', 'Layout', 'Executivo', 'Detalhamento', 'Cancelado'
         ];
 
         if (!etapasPermitidas.includes(novaEtapa)) {
@@ -50,7 +51,7 @@ const ArquiteturaModel = {
         const query = `
             UPDATE kanban_arquitetura
             SET matriz_recebida_check = TRUE,
-                etapa_kanban = 'producao',
+                etapa_kanban = 'Producao',
                 ultima_movimentacao = NOW()
             WHERE pedido_id = ?`;
         const [res] = await conexao.query(query, [pedidoId]);

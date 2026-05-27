@@ -130,23 +130,17 @@ class PedidoService {
             throw AppError.badRequest('Pedido ainda não liberado pelo financeiro.');
         }
 
+        const proximaFase = PedidoService.definirProximaFase(pedido);
+
+        if (proximaFase === STATUS_PEDIDO.PRODUCAO) {
+            const ProducaoService = require('./producaoService');
+            await ProducaoService.moverParaProducao(id, { financeiro_id: financeiro.id });
+            return await PedidoService.buscarPedido(id);
+        }
+
         const connection = await db.getConnection();
         try {
             await connection.beginTransaction();
-            const proximaFase = PedidoService.definirProximaFase(pedido);
-
-            if (proximaFase === STATUS_PEDIDO.PRODUCAO) {
-                const producao = await PedidoModel.buscarProducaoPorPedidoId(id);
-                if (!producao) {
-                    await PedidoModel.criarCardProducaoParaPedido({
-                        pedido_id: id,
-                        financeiro_id: financeiro.id,
-                        tipo_producao: 'Normal'
-                    }, connection);
-                }
-                await PedidoModel.atualizarStatus(id, STATUS_PEDIDO.PRODUCAO, connection);
-            }
-
             if (proximaFase === STATUS_PEDIDO.ARQUITETURA) {
                 const arquitetura = await PedidoModel.buscarArquiteturaPorPedidoId(id);
                 if (!arquitetura) {
@@ -203,7 +197,8 @@ class PedidoService {
             throw AppError.badRequest('Pedido só pode ser finalizado quando produção estiver em Expedicao.');
         }
 
-        await PedidoModel.atualizarStatus(id, STATUS_PEDIDO.FINALIZADO);
+        const ProducaoService = require('./producaoService');
+        await ProducaoService.atualizarEtapa(producao.id, 'Finalizado', { permissoes: { pode_forcar_transicao: true } });
         return await PedidoService.buscarPedido(id);
     }
 }

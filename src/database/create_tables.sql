@@ -156,7 +156,7 @@ CREATE TABLE kanban_arquitetura (
     id INT AUTO_INCREMENT PRIMARY KEY,
     pedido_id BIGINT UNSIGNED,
     arquiteto_id BIGINT UNSIGNED,
-    etapa_kanban ENUM('Briefing', 'Medicao', 'Layout', 'Executivo', 'Detalhamento', 'Cancelado') DEFAULT 'Briefing',
+    etapa_kanban VARCHAR(50) DEFAULT 'Aguardando',
     requer_matriz_externa TINYINT(1) DEFAULT 0,
     desenho_enviado_externo TINYINT(1) DEFAULT 0,
     data_envio_externo TIMESTAMP NULL,
@@ -231,7 +231,7 @@ CREATE TABLE kanban_producao (
     pedido_id BIGINT UNSIGNED,
     arquitetura_id INT,
     financeiro_id BIGINT UNSIGNED,
-    etapa_kanban ENUM('Aguardando Liberacao', 'Aguardando Matriz', 'Fila de Corte', 'Fabricacao', 'Acabamento', 'Expedicao', 'Cancelado') DEFAULT 'Aguardando Liberacao',
+    etapa_kanban ENUM('Aguardando Liberacao', 'Aguardando Matriz', 'Fila de Corte', 'Fabricacao', 'Acabamento', 'Expedicao', 'Finalizado', 'Cancelado') DEFAULT 'Aguardando Liberacao',
     tipo_producao ENUM('Normal', 'Especial') DEFAULT 'Normal',
     matriz_pronta_interna TINYINT(1) DEFAULT 0,
     matriz_chegou_externa TINYINT(1) DEFAULT 0,
@@ -264,5 +264,6 @@ FOREIGN KEY (funcionario_id) REFERENCES funcionarios(id) ON DELETE CASCADE;
 ALTER TABLE notificacoes_producao
 ADD CONSTRAINT fk_notif_prod_pedido
 FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE;
+
 
 -- Se der tempo, verificar a criação de uma tabela de Leads Arquivados que se conectará com convertido na tabela de Lead.

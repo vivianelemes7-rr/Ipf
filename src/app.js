@@ -7,6 +7,7 @@ const crmFinanceiroRoutes = require('./routes/crmFinanceiroRoutes');
 const notificacoesComRoutes = require('./routes/notificacoes_comRoutes');
 const notificacoesFinRoutes = require('./routes/notificacoes_finRoutes');
 const notificacoesArqRoutes = require('./routes/notificacoes_arqRoutes');
+const notificacoesProducaoRoutes = require('./routes/notificacoes_producaoRoutes');
 const authRoutes = require('./routes/autenticacaoRoutes');
 const funcRoutes = require('./routes/funcionarioRoutes');
 const permissoesRoutes = require('./routes/permissoesRoutes');
@@ -33,6 +34,7 @@ app.use('/crm', crmFinanceiroRoutes);
 app.use('/notificacoes-com', notificacoesComRoutes);
 app.use('/notificacoes-fin', notificacoesFinRoutes);
 app.use('/notificacoes-arq', notificacoesArqRoutes);
+app.use('/notificacoes-producao', notificacoesProducaoRoutes);
 app.use('/auth', authRoutes);
 app.use('/funcionarios', funcRoutes);
 app.use('/permissoes', permissoesRoutes);
@@ -45,7 +47,8 @@ app.use('/arquitetura', arquiteturaRoutes);
 const PREFIXOS_API = [
     '/auth', '/funcionarios', '/permissoes', '/leads', '/clientes', '/crm',
     '/vendas', '/producao', '/pedidos', '/matriz', '/notificacoes-com',
-    '/notificacoes-fin', '/notificacoes-arq', '/arquitetura'
+    '/notificacoes-fin', '/notificacoes-arq', '/notificacoes-producao',
+    '/arquitetura'
 ];
 
 app.use((req, res, next) => {
