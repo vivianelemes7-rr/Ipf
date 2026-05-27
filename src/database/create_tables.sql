@@ -249,4 +249,4 @@ CREATE TABLE notificacoes_producao (
 );
 
 
-Se der tempo, verificar a criação de uma tabela de Leads Arquivados que se conectará com convertido com a tabela de Lead  BOOLEAN DEFAULT FALSE,  -- Identifica se virou venda/pedido
+Se der tempo, verificar a criação de uma tabela de Leads Arquivados que se conectará com  convertido com a tabela de Lead  BOOLEAN DEFAULT FALSE,  -- Identifica se virou venda/pedido
