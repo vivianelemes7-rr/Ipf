@@ -1,7 +1,8 @@
 const PermissoesService = {
     gerarPermissoesPorCargo(cargo) {
-        let cargoNormalizado = String(cargo || '').trim().toLowerCase();
-        if (cargoNormalizado === 'administrador') cargoNormalizado = 'gerente';
+        const cargoNormalizado = String(cargo || '').trim().toLowerCase() === 'produção'
+            ? 'producao'
+            : String(cargo || '').trim().toLowerCase();
 
         const permissoesBase = {
             modulo_vendas: false,
@@ -28,7 +29,12 @@ const PermissoesService = {
             pode_destravar_impedimento: false
         };
 
-        if (cargoNormalizado === 'vendedor') {
+        if (cargoNormalizado === 'administrador') {
+            Object.keys(permissoesBase).forEach((campo) => {
+                permissoesBase[campo] = true;
+            });
+            permissoesBase.ver_apenas_proprio = false;
+        } else if (cargoNormalizado === 'vendedor') {
             permissoesBase.modulo_vendas = true;
         } else if (cargoNormalizado === 'financeiro') {
             permissoesBase.modulo_financeiro = true;
@@ -47,22 +53,9 @@ const PermissoesService = {
             permissoesBase.pode_trocar_responsavel = true;
         } else if (cargoNormalizado === 'gerente') {
             permissoesBase.modulo_vendas = true;
-            permissoesBase.modulo_financeiro = true;
-            permissoesBase.modulo_producao = true;
-            permissoesBase.modulo_arquitetura = true;
-            permissoesBase.pode_deletar = true;
             permissoesBase.ver_apenas_proprio = false;
-            permissoesBase.pode_retroceder_card = true;
-            permissoesBase.pode_mover_qualquer_etapa = true;
-            permissoesBase.pode_reabrir_card = true;
-            permissoesBase.pode_aprovar_entrega_etapa = true;
-            permissoesBase.pode_forcar_transicao = true;
             permissoesBase.pode_trocar_responsavel = true;
             permissoesBase.pode_alterar_prioridade = true;
-            permissoesBase.pode_arquivar_card = true;
-            permissoesBase.pode_deletar_comentarios = true;
-            permissoesBase.pode_editar_comentarios_outros = true;
-            permissoesBase.pode_destravar_impedimento = true;
         }
 
         return permissoesBase;

@@ -1,6 +1,6 @@
 const AppError = require('../utils/AppError');
 
-const CARGOS_VALIDOS = ['Vendedor', 'Financeiro', 'Produção', 'Arquitetura', 'Gerente', 'Producao'];
+const CARGOS_VALIDOS = ['Vendedor', 'Financeiro', 'Produção', 'Arquitetura', 'Gerente', 'Administrador', 'Producao'];
 const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function falharValidacao(erros) {
@@ -75,6 +75,18 @@ const validarCadastroFuncionario = (req, res, next) => {
     next();
 };
 
+const validarCadastroVendedor = (req, res, next) => {
+    const { nome, email, senha, password } = req.body;
+    const erros = [];
+
+    if (!nome || nome.trim().length === 0) erros.push('Nome é obrigatório');
+    validarEmailCampo(email, erros);
+    validarSenha(password || senha, erros);
+
+    if (erros.length > 0) return next(falharValidacao(erros));
+    next();
+};
+
 const validarLogin = (req, res, next) => {
     const { email, senha, password } = req.body;
     const erros = [];
@@ -132,6 +144,7 @@ module.exports = {
     validarCadastroPublico,
     validarCadastroAdmin,
     validarCadastroFuncionario,
+    validarCadastroVendedor,
     validarLogin,
     validarEmailObrigatorio,
     validarAlterarSenha,
