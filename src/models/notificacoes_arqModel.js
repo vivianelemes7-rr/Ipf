@@ -30,17 +30,16 @@ class NotificacaoArqModel {
             funcionario_id,
             titulo,
             mensagem,
-            tipo_modulo,
-            item_id,
-            prioridade_alerta,
-            data_cobranca_matriz
+            tipo_notificacao,
+            pedido_id,
+            prioridade_alerta
         } = notificacao;
 
         const [result] = await conexao.query(
             `INSERT INTO notificacoes_arquitetura
-            (funcionario_id, titulo, mensagem, tipo_modulo, item_id, prioridade_alerta, data_cobranca_matriz)
-            VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [funcionario_id, titulo, mensagem, tipo_modulo, item_id, prioridade_alerta || 'Normal', data_cobranca_matriz || null]
+            (funcionario_id, titulo, mensagem, tipo_notificacao, pedido_id, lida, data_criacao)
+            VALUES (?, ?, ?, ?, ?, FALSE, CURRENT_TIMESTAMP)`,
+            [funcionario_id, titulo, mensagem, tipo_notificacao || 'Novo Projeto', pedido_id || null]
         );
         return result.insertId;
     }
@@ -81,10 +80,10 @@ class NotificacaoArqModel {
         const [rows] = await conexao.query(
             `SELECT na.*, ka.pedido_id, ka.previsao_retorno_externo
              FROM notificacoes_arquitetura na
-             JOIN kanban_arquitetura ka ON na.item_id = ka.pedido_id
+             JOIN kanban_arquitetura ka ON na.pedido_id = ka.pedido_id
              WHERE ka.requer_matriz_externa = TRUE
                AND ka.matriz_recebida_check = FALSE
-               AND na.data_cobranca_matriz <= CURDATE()
+               AND na.data_criacao <= DATE_SUB(CURDATE(), INTERVAL 3 DAY)
                AND na.lida = FALSE
              ORDER BY na.data_criacao DESC`
         );
