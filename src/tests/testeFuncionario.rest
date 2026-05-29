@@ -2,9 +2,9 @@
 # Pré-requisito: login em testeAutenticacao.rest (@admin_token e @token)
 
 @url_base = http://localhost:3000
-@admin_token =
-@token =
-@funcionario_id = 2
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJ0ZXN0ZS51c3VhcmlvQGlwZi5jb20iLCJjYXJnbyI6IlZlbmRlZG9yIiwicm9sZSI6InZlbmRlZG9yIiwicGVybWlzc29lcyI6eyJtb2R1bG9fdmVuZGFzIjoxLCJtb2R1bG9fZmluYW5jZWlybyI6MCwibW9kdWxvX3Byb2R1Y2FvIjowLCJtb2R1bG9fYXJxdWl0ZXR1cmEiOjAsInBvZGVfZWRpdGFyIjoxLCJwb2RlX2RlbGV0YXIiOjAsInZlcl9hcGVuYXNfcHJvcHJpbyI6MSwicG9kZV9yZXRyb2NlZGVyX2NhcmQiOjAsInBvZGVfbW92ZXJfcXVhbHF1ZXJfZXRhcGEiOjAsInBvZGVfcmVhYnJpcl9jYXJkIjowLCJwb2RlX2Fwcm92YXJfZW50cmVnYV9ldGFwYSI6MCwicG9kZV9mb3JjYXJfdHJhbnNpY2FvIjowLCJwb2RlX3Ryb2Nhcl9yZXNwb25zYXZlbCI6MCwicG9kZV9hc3N1bWlyX2NhcmQiOjEsInBvZGVfYWx0ZXJhcl9wcmF6b3MiOjEsInBvZGVfYWx0ZXJhcl9wcmlvcmlkYWRlIjowLCJwb2RlX3Zlcl92YWxvcmVzIjoxLCJwb2RlX2FycXVpdmFyX2NhcmQiOjAsInBvZGVfZGVsZXRhcl9jb21lbnRhcmlvcyI6MCwicG9kZV9lZGl0YXJfY29tZW50YXJpb3Nfb3V0cm9zIjowLCJwb2RlX21hcmNhcl9pbXBlZGltZW50byI6MSwicG9kZV9kZXN0cmF2YXJfaW1wZWRpbWVudG8iOjB9LCJpYXQiOjE3ODAwNjQxOTgsImV4cCI6MTc4MDA2Nzc5OH0.iHGU9FIDoVS9OODghT1QBwH1hxmcS3bPOYI6HkhuvCU
+@admin_token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJhZG1pbkBpcGYuY29tIiwiY2FyZ28iOiJBZG1pbmlzdHJhZG9yIiwicm9sZSI6ImFkbWluaXN0cmFkb3IiLCJwZXJtaXNzb2VzIjp7Im1vZHVsb192ZW5kYXMiOnRydWUsIm1vZHVsb19maW5hbmNlaXJvIjp0cnVlLCJtb2R1bG9fcHJvZHVjYW8iOnRydWUsIm1vZHVsb19hcnF1aXRldHVyYSI6dHJ1ZSwicG9kZV9lZGl0YXIiOnRydWUsInBvZGVfZGVsZXRhciI6dHJ1ZSwidmVyX2FwZW5hc19wcm9wcmlvIjpmYWxzZSwicG9kZV9yZXRyb2NlZGVyX2NhcmQiOnRydWUsInBvZGVfbW92ZXJfcXVhbHF1ZXJfZXRhcGEiOnRydWUsInBvZGVfcmVhYnJpcl9jYXJkIjp0cnVlLCJwb2RlX2Fwcm92YXJfZW50cmVnYV9ldGFwYSI6dHJ1ZSwicG9kZV9mb3JjYXJfdHJhbnNpY2FvIjp0cnVlLCJwb2RlX3Ryb2Nhcl9yZXNwb25zYXZlbCI6dHJ1ZSwicG9kZV9hc3N1bWlyX2NhcmQiOnRydWUsInBvZGVfYWx0ZXJhcl9wcmF6b3MiOnRydWUsInBvZGVfYWx0ZXJhcl9wcmlvcmlkYWRlIjp0cnVlLCJwb2RlX3Zlcl92YWxvcmVzIjp0cnVlLCJwb2RlX2FycXVpdmFyX2NhcmQiOnRydWUsInBvZGVfZGVsZXRhcl9jb21lbnRhcmlvcyI6dHJ1ZSwicG9kZV9lZGl0YXJfY29tZW50YXJpb3Nfb3V0cm9zIjp0cnVlLCJwb2RlX21hcmNhcl9pbXBlZGltZW50byI6dHJ1ZSwicG9kZV9kZXN0cmF2YXJfaW1wZWRpbWVudG8iOnRydWV9LCJpYXQiOjE3ODAwNjQyNjIsImV4cCI6MTc4MDA2Nzg2Mn0.2oXXLmuNqj360RAMRVkKm4TtdmexrLd2PpnY4-Povx0
+@funcionario_id = 5
 
 # ─── Funcionários (Gerente) ───
 
@@ -32,6 +32,17 @@ Content-Type: application/json
   "status_ativo": true
 }
 
+### Editar funcionário Financeiro
+PUT {{url_base}}/funcionarios/{{funcionario_id}}
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "cargo": "Financeiro",
+  "departamento": "Financeiro",
+  "status_ativo": true
+}
+
 ### Excluir funcionário (cuidado — irreversível)
 # DELETE {{url_base}}/funcionarios/{{funcionario_id}}
 # Authorization: Bearer {{admin_token}}
@@ -50,6 +61,20 @@ Content-Type: application/json
 {
   "modulo_vendas": 1,
   "modulo_financeiro": 0,
+  "modulo_producao": 0,
+  "modulo_arquitetura": 0,
+  "pode_editar": 1,
+  "pode_deletar": 0
+}
+
+### Atualizar permissões manualmente (Financeiro)
+PUT {{url_base}}/permissoes/{{funcionario_id}}
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "modulo_vendas": 0,
+  "modulo_financeiro": 1,
   "modulo_producao": 0,
   "modulo_arquitetura": 0,
   "pode_editar": 1,

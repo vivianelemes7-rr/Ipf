@@ -1,42 +1,62 @@
 ### Configuração de Variáveis de Ambiente
-@baseUrl = http://localhost:3000/api/financeiro
+@url_base = http://localhost:3000/crmFinanceiro
 @contentType = application/json
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NSwiZW1haWwiOiJ0ZXN0ZS51c3VhcmlvMkBpcGYuY29tIiwiY2FyZ28iOiJGaW5hbmNlaXJvIiwicm9sZSI6ImZpbmFuY2Vpcm8iLCJwZXJtaXNzb2VzIjp7Im1vZHVsb192ZW5kYXMiOjAsIm1vZHVsb19maW5hbmNlaXJvIjoxLCJtb2R1bG9fcHJvZHVjYW8iOjAsIm1vZHVsb19hcnF1aXRldHVyYSI6MCwicG9kZV9lZGl0YXIiOjEsInBvZGVfZGVsZXRhciI6MCwidmVyX2FwZW5hc19wcm9wcmlvIjoxLCJwb2RlX3JldHJvY2VkZXJfY2FyZCI6MCwicG9kZV9tb3Zlcl9xdWFscXVlcl9ldGFwYSI6MCwicG9kZV9yZWFicmlyX2NhcmQiOjAsInBvZGVfYXByb3Zhcl9lbnRyZWdhX2V0YXBhIjowLCJwb2RlX2ZvcmNhcl90cmFuc2ljYW8iOjAsInBvZGVfdHJvY2FyX3Jlc3BvbnNhdmVsIjowLCJwb2RlX2Fzc3VtaXJfY2FyZCI6MSwicG9kZV9hbHRlcmFyX3ByYXpvcyI6MSwicG9kZV9hbHRlcmFyX3ByaW9yaWRhZGUiOjAsInBvZGVfdmVyX3ZhbG9yZXMiOjEsInBvZGVfYXJxdWl2YXJfY2FyZCI6MCwicG9kZV9kZWxldGFyX2NvbWVudGFyaW9zIjowLCJwb2RlX2VkaXRhcl9jb21lbnRhcmlvc19vdXRyb3MiOjAsInBvZGVfbWFyY2FyX2ltcGVkaW1lbnRvIjoxLCJwb2RlX2Rlc3RyYXZhcl9pbXBlZGltZW50byI6MH0sImlhdCI6MTc4MDA2NTU1OCwiZXhwIjoxNzgwMDY5MTU4fQ.hec2m48UextJ_X7Hxqefzcfw4ap3LKBfrtnOUc0nZCA
+@admin_token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJhZG1pbkBpcGYuY29tIiwiY2FyZ28iOiJBZG1pbmlzdHJhZG9yIiwicm9sZSI6ImFkbWluaXN0cmFkb3IiLCJwZXJtaXNzb2VzIjp7Im1vZHVsb192ZW5kYXMiOnRydWUsIm1vZHVsb19maW5hbmNlaXJvIjp0cnVlLCJtb2R1bG9fcHJvZHVjYW8iOnRydWUsIm1vZHVsb19hcnF1aXRldHVyYSI6dHJ1ZSwicG9kZV9lZGl0YXIiOnRydWUsInBvZGVfZGVsZXRhciI6dHJ1ZSwidmVyX2FwZW5hc19wcm9wcmlvIjpmYWxzZSwicG9kZV9yZXRyb2NlZGVyX2NhcmQiOnRydWUsInBvZGVfbW92ZXJfcXVhbHF1ZXJfZXRhcGEiOnRydWUsInBvZGVfcmVhYnJpcl9jYXJkIjp0cnVlLCJwb2RlX2Fwcm92YXJfZW50cmVnYV9ldGFwYSI6dHJ1ZSwicG9kZV9mb3JjYXJfdHJhbnNpY2FvIjp0cnVlLCJwb2RlX3Ryb2Nhcl9yZXNwb25zYXZlbCI6dHJ1ZSwicG9kZV9hc3N1bWlyX2NhcmQiOnRydWUsInBvZGVfYWx0ZXJhcl9wcmF6b3MiOnRydWUsInBvZGVfYWx0ZXJhcl9wcmlvcmlkYWRlIjp0cnVlLCJwb2RlX3Zlcl92YWxvcmVzIjp0cnVlLCJwb2RlX2FycXVpdmFyX2NhcmQiOnRydWUsInBvZGVfZGVsZXRhcl9jb21lbnRhcmlvcyI6dHJ1ZSwicG9kZV9lZGl0YXJfY29tZW50YXJpb3Nfb3V0cm9zIjp0cnVlLCJwb2RlX21hcmNhcl9pbXBlZGltZW50byI6dHJ1ZSwicG9kZV9kZXN0cmF2YXJfaW1wZWRpbWVudG8iOnRydWV9LCJpYXQiOjE3ODAwNjQyNjIsImV4cCI6MTc4MDA2Nzg2Mn0.2oXXLmuNqj360RAMRVkKm4TtdmexrLd2PpnY4-Povx0
+@responsavel_fin_id = 5
+@pedido_id = 2
+@id_do_card = 7
+
+
 
 ### 1. Busca todos os cards do Kanban Financeiro (Geral)
-GET {{baseUrl}}/financeiro
-Accept: {{contentType}}
+GET {{url_base}}/
+Accept: application/json
+Authorization: Bearer {{token}}
 
-### 2. Busca cards filtrados por um responsável do financeiro específico
-GET {{baseUrl}}/financeiro?responsavel_fin_id=3
-Accept: {{contentType}}
+### 2. Busca cards filtrados por um responsável específico
+GET {{url_base}}/?responsavel_fin_id={{responsavel_fin_id}}
+Accept: application/json
+Authorization: Bearer {{token}}
 
-### 3. Busca cards filtrados por uma coluna/etapa (Ex: Gerar Ordem de Compra/Pagamento ou Notificação de Liberação)
-GET {{baseUrl}}/financeiro?etapa_kanban=Liberado%20para%20Produção
-Accept: {{contentType}}
+### 3. Busca cards filtrados por uma coluna/etapa
+GET {{url_base}}/?etapa_kanban=Liberado%20para%20Produção
+Accept: application/json
+Authorization: Bearer {{token}}
 
-### 4. Criar um card no financeiro (Simulando gatilho do Gerar Ordem de Compra/Pagamento vindo do comercial)
-# Altere o 'pedido_id' para um ID existente na sua tabela de pedidos
-POST {{baseUrl}}/financeiro
-Content-Type: {{contentType}}
+### 4. Criar um card no financeiro
+POST {{url_base}}/
+Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-  "pedido_id": 211,
-  "responsavel_fin_id": 1,
+  "pedido_id": {{pedido_id}},
+  "responsavel_fin_id": 2,
   "etapa_kanban": "Validando UC10",
   "valor_total_pedido": 15000.00,
   "status_pagamento": "Pendente",
   "custo_matriz_externa": 0.00,
-  "observacoes_financeiras": "Aguardando confirmação do PIX de entrada do cliente Inova Real Estate."
+  "observacoes_financeiras": "Aguardando confirmação do PIX de entrada."
 }
 
-### 5. Atualizar dados do card (Ex: Alterando o responsável financeiro ou adicionando notas)
-# Altere o ':id' para o ID gerado pelo banco na criação acima
-PUT {{baseUrl}}/financeiro/1
-Content-Type: {{contentType}}
+### Criar card sem pedido_id (erro esperado)
+POST {{url_base}}/
+Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-  "responsavel_fin_id": 3,
-  "etapa_kanban": "Validando UC10",
+  "responsavel_fin_id": 1,
+  "etapa_kanban": "Validando UC10"
+}
+
+### 5. Atualizar dados do card
+PUT {{url_base}}/{{id_do_card}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "responsavel_fin_id": {{responsavel_fin_id}},
+  "etapa_kanban": "Em produção",
   "valor_total_pedido": 15000.00,
   "status_pagamento": "Parcialmente Pago",
   "custo_matriz_externa": 1200.00,
@@ -46,19 +66,31 @@ Content-Type: {{contentType}}
   "observacoes_financeiras": "Entrada de R$ 7.500 paga. Marcos Silva assumiu a conta."
 }
 
-### 6. GATILHO:  Notificação de Liberação - Liberar para Produção (Executa a transação SQL)
-# Este endpoint atualiza o financeiro e altera o status na tabela 'pedidos' para 'Produção'
-PATCH {{baseUrl}}/financeiro/1/liberar-producao
-Accept: {{contentType}}
+### 6. GATILHO: Liberar para Produção (Executa transação SQL)
+PATCH {{url_base}}/{{id_do_card}}/liberar-producao
+Authorization: Bearer {{token}}
 
-### 7. Atualizar rapidamente o Status de Pagamento (Ex: Quando o cliente quitar)
-PATCH {{baseUrl}}/financeiro/1/status-pagamento
-Content-Type: {{contentType}}
+{}
+
+### 7. Atualizar rapidamente o Status de Pagamento
+PATCH {{url_base}}/{{id_do_card}}/status-pagamento
+Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
   "status_pagamento": "Quitado"
 }
 
+### Atualizar status para valor inválido (erro esperado se houver Enum)
+PATCH {{url_base}}/{{id_do_card}}/status-pagamento
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status_pagamento": "INVALIDO"
+}
+
 ### 8. Deletar um card do financeiro
-DELETE {{baseUrl}}/financeiro/1
-Accept: {{contentType}}
+DELETE {{url_base}}/{{id_do_card}}
+Accept: application/json
+Authorization: Bearer {{token}}
