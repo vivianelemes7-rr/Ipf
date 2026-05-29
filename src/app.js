@@ -1,4 +1,4 @@
-onst express = require('express');
+const express = require('express');
 const cors = require('cors');
 const leadRoutes = require('./routes/leadRoutes');
 const clienteRoutes = require('./routes/clienteRoutes');
@@ -32,7 +32,7 @@ app.get('/health', (req, res) => {
 app.use('/leads', leadRoutes);
 app.use('/clientes', clienteRoutes);
 app.use('/crm', crmRoutes);
-app.use('/crm', crmFinanceiroRoutes);
+app.use('/crmFinanceiro', crmFinanceiroRoutes);
 app.use('/notificacoes-com', notificacoesComRoutes);
 app.use('/notificacoes-fin', notificacoesFinRoutes);
 app.use('/notificacoes-arq', notificacoesArqRoutes);
@@ -49,7 +49,7 @@ app.use('/arquitetura', arquiteturaRoutes);
 app.use('/gerencia', gerenciaRoutes);
 
 const PREFIXOS_API = [
-    '/auth', '/funcionarios', '/permissoes', '/leads', '/clientes', '/crm',
+    '/auth', '/funcionarios', '/permissoes', '/leads', '/clientes', '/crm', 'crmFinanceiro',
     '/vendas', '/producao', '/pedidos', '/matriz', '/notificacoes-com',
     '/notificacoes-fin', '/notificacoes-arq', '/notificacoes-producao',
     '/notificacoes-gerencia', '/arquitetura', '/gerencia'

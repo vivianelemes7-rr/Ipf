@@ -32,6 +32,16 @@ Content-Type: application/json
   "senha": "{{senha_teste}}"
 }
 
+### Cadastro Financeiro (usuário pendente)
+POST {{url_base}}/auth/cadastrar
+Content-Type: application/json
+
+{
+  "nome": "Financeiro",
+  "email": "{{email_teste}}",
+  "senha": "{{senha_teste}}"
+}
+
 ### Cadastro vazio (erro esperado 422)
 POST {{url_base}}/auth/cadastrar
 Content-Type: application/json
@@ -94,6 +104,16 @@ Content-Type: application/json
   "email": "{{email_teste}}",
   "senha": "{{senha_teste}}"
 }
+
+### Login usuário Financeiro → @token (aprove em testeFuncionario.rest antes)
+POST {{url_base}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email_teste}}",
+  "senha": "{{senha_teste}}"
+}
+
 
 ### Login com cargo opcional no body
 POST {{url_base}}/auth/login
