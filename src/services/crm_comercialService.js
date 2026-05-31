@@ -1,7 +1,6 @@
 const AppError = require('../utils/AppError');
 const CRMComercialModel = require("../models/crm_comercialModel");
 const PedidoModel = require("../models/pedidoModel");
-const VendaModel = require("../models/vendaModel");
 const PedidoService = require('./pedidoService');
 
 const ETAPAS_VENDAS = CRMComercialModel.ETAPAS_VENDAS;
@@ -121,8 +120,6 @@ class CRMComercialService {
         const updatedRows = await CRMComercialModel.markAsWon(id, numero_pedido);
 
         if (updatedRows > 0) {
-            // 2. Mantém compatibilidade com o fluxo antigo de vendas
-            await VendaModel.criarDaLead(cardAntesDoGanho.lead_id, cardAntesDoGanho.observacoes_venda || 'Pedido gerado via CRM');
 
             // 3. Cria o pedido real e inicia o fluxo financeiro
             const pedidoCriado = await PedidoService.criarPedido({
