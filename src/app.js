@@ -15,7 +15,6 @@ const permissoesRoutes = require('./routes/permissoesRoutes');
 const producaoRoutes = require('./routes/producaoRoutes');
 const pedidoRoutes = require('./routes/pedidoRoutes');
 const matrizRoutes = require('./routes/matrizRoutes');
-const vendaRoutes = require('./routes/vendaRoutes');
 const arquiteturaRoutes = require('./routes/arquiteturaRoutes');
 const gerenciaRoutes = require('./routes/gerenciaRoutes');
 const { manipuladorErros, rotaNaoEncontrada } = require('./middlewares/erroMiddleware');
@@ -44,13 +43,12 @@ app.use('/permissoes', permissoesRoutes);
 app.use('/producao', producaoRoutes);
 app.use('/pedidos', pedidoRoutes);
 app.use('/matriz', matrizRoutes);
-app.use('/vendas', vendaRoutes);
 app.use('/arquitetura', arquiteturaRoutes);
 app.use('/gerencia', gerenciaRoutes);
 
 const PREFIXOS_API = [
-    '/auth', '/funcionarios', '/permissoes', '/leads', '/clientes', '/crm', 'crmFinanceiro',
-    '/vendas', '/producao', '/pedidos', '/matriz', '/notificacoes-com',
+    '/auth', '/funcionarios', '/permissoes', '/leads', '/clientes', '/crm', '/crmFinanceiro',
+    '/producao', '/pedidos', '/matriz', '/notificacoes-com',
     '/notificacoes-fin', '/notificacoes-arq', '/notificacoes-producao',
     '/notificacoes-gerencia', '/arquitetura', '/gerencia'
 ];
