@@ -1,0 +1,86 @@
+# Produção — /producao
+# Pré-requisito: @token com módulo produção
+
+@url_base = http://localhost:3000
+@token =
+@pedido_id = 1
+@producao_id = 1
+
+### Fila de produção
+GET {{url_base}}/producao/fila
+Authorization: Bearer {{token}}
+
+### Buscar card de produção
+GET {{url_base}}/producao/{{producao_id}}
+Authorization: Bearer {{token}}
+
+### Avançar pedido para produção
+POST {{url_base}}/producao/avancar/{{pedido_id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "responsavel_producao_id": 4,
+  "previsao_entrega_final": "2026-06-01"
+}
+
+### Atualizar etapa
+PATCH {{url_base}}/producao/{{producao_id}}/etapa
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "etapa_kanban": "Fabricacao"
+}
+
+### Atualizar responsável
+PATCH {{url_base}}/producao/{{producao_id}}/responsavel
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "responsavel_producao_id": 4
+}
+
+### Atualizar matriz
+PATCH {{url_base}}/producao/{{producao_id}}/matriz
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tipo_producao": "Especial",
+  "matriz_pronta_interna": false,
+  "matriz_chegou_externa": true
+}
+
+### Atualizar datas
+PATCH {{url_base}}/producao/{{producao_id}}/datas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "data_inicio_real": "2026-05-27 10:00:00",
+  "previsao_entrega_final": "2026-06-10"
+}
+
+### Enviar para expedição
+PATCH {{url_base}}/producao/{{producao_id}}/etapa
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "etapa_kanban": "Expedicao"
+}
+
+### Finalizar produção
+PATCH {{url_base}}/producao/{{producao_id}}/etapa
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "etapa_kanban": "Finalizado"
+}
+
+### Remover card de produção
+DELETE {{url_base}}/producao/{{producao_id}}
+Authorization: Bearer {{token}}

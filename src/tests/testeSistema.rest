@@ -1,0 +1,6 @@
+# Infraestrutura — endpoints sem domínio de negócio
+
+@url_base = http://localhost:3000
+
+### Health check
+GET {{url_base}}/health

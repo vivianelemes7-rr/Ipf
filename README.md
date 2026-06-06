@@ -1,121 +1,24 @@
-# Projeto IPF
+# IPFSistemas - Setup Inicial
 
-Aplicacao React com Vite.
+## Instruções de Instalação
+1. Clone o repositório para sua máquina local.
+2. No terminal do VS Code, execute `npm install` para instalar as dependências.
+3. Crie um arquivo `.env` na raiz do projeto e configure as credenciais do seu banco de dados local.
 
-## Executar o projeto
+## Banco de Dados
+Os scripts para criação das tabelas e estrutura do banco estão localizados na pasta `/database`.
 
-```bash
-npm install
-npm run dev
-```
+## Arquitetura do Sistema
+O projeto utiliza o padrão de Separação de Responsabilidades (SoC):
+- **Routes**: Definição dos endpoints e recebimento de requisições.
+- **Controllers**: Gerenciamento do fluxo de dados e respostas.
+- **Services**: Implementação das regras de negócio e lógica do sistema.
+- **Models**: Comunicação direta com o banco de dados.
 
-## Preparacao para integracao com back-end
+## Testes da API
 
-Foi criada uma camada de servicos para permitir troca entre mock e API real sem alterar os componentes.
+Passo a passo para quem não programa: **[FLUXO_TESTES.md](./FLUXO_TESTES.md)**.
 
-Arquivos principais:
+## Contato
+Em caso de dúvidas técnicas ou necessidade de ajustes na estrutura, entre em contato via WhatsApp.
 
-- `src/config/env.js`: configura modo de dados e URL base
-- `src/services/httpClient.js`: cliente HTTP centralizado
-- `src/services/sessionService.js`: persistencia de token e usuario logado
-- `src/services/authService.js`: login/logout e normalizacao de payload de autenticacao
-- `src/services/kanbanService.js`: servico da tela de Kanban
-- `src/config/roles.js`: regras de acesso por perfil em um unico ponto
-- `src/mocks/kanbanMock.js`: dados simulados e contratos iniciais
-
-## Variaveis de ambiente
-
-Use o arquivo `.env.example` como base:
-
-```bash
-VITE_API_MODE=mock
-VITE_API_BASE_URL=http://localhost:3000
-VITE_API_TIMEOUT_MS=10000
-```
-
-### Modos
-
-- `VITE_API_MODE=mock`: usa dados locais simulados
-- `VITE_API_MODE=api`: tenta API real e faz fallback para mock se a API falhar
-
-## Como integrar quando o back estiver pronto
-
-1. Definir `VITE_API_MODE=api` no `.env`.
-2. Implementar endpoint `POST /auth/login` retornando:
-
-```json
-{
-	"token": "jwt-ou-access-token",
-	"user": {
-		"id": "id-do-usuario",
-		"name": "Nome",
-		"email": "email@empresa.com",
-		"role": "administrador"
-	}
-}
-```
-
-3. Implementar endpoint `GET /kanban/boards` retornando um destes formatos:
-
-```json
-{ "boards": { "arquitetura": { "key": "arquitetura", "title": "...", "columns": [], "cards": [] } } }
-```
-
-ou
-
-```json
-[{ "key": "arquitetura", "title": "...", "columns": [], "cards": [] }]
-```
-
-4. Implementar endpoint `PATCH /kanban/boards/:boardKey/cards/:cardId` com body `{ "columnId": "novo-status" }`.
-5. Quando o ambiente estiver estavel, remover fallback para mocks em `src/services/kanbanService.js`.
-
-## Contrato unico de integracao
-
-Foi criado o arquivo `src/config/apiContract.js` para centralizar endpoints, campos e valores esperados.
-
-Contrato OpenAPI para o backend implementar direto:
-
-- `openapi.yaml`
-
-Se o backend seguir esse contrato, a integracao fica direta e com menos ajustes no front.
-
-### Palavras que precisam bater com o back-end
-
-Endpoints:
-
-- `/auth/login`
-- `/kanban/boards`
-- `/kanban/boards/:boardKey/cards`
-- `/kanban/boards/:boardKey/cards/:cardId`
-
-Campos de autenticacao:
-
-- request: `email`, `password`, `role`
-- response: `token` (ou `accessToken`), `user`, `id`, `name`, `email`, `role`
-
-Envelope de resposta aceito:
-
-- `data` (opcional, quando o payload vier envelopado)
-- `boards`
-- `message`
-
-Campos de board:
-
-- `key`, `title`, `columns`, `cards`
-
-Campos de coluna:
-
-- `id`, `title`, `tone`
-
-Campos de card:
-
-- `id`, `columnId`, `title`, `lines`, `footer`, `seller`
-- `processTag`, `budgetFileName`, `clientDocument`, `clientAddress`, `homologadoCliente`
-- `updatedAt`, `updatedByProfile`
-
-Valores fixos esperados hoje:
-
-- papeis: `administrador`, `arquitetura`, `producao`, `vendedor`, `gerente`, `financeiro`, `logistica`
-- tags de processo: `normal`, `especial`
-- chaves de board: `arquitetura`, `producao`, `vendedor`, `gerente`, `financeiro`, `logistica`

@@ -1,0 +1,8 @@
+# OBSOLETO — use crm_comercial_api_test.rest
+# Este arquivo usava o prefixo incorreto /api/crm; as rotas reais estão em /crm
+
+@url_base = http://localhost:3000/crm
+@token =
+@id_do_card = 1
+
+### Redirecionamento: abra crm_comercial_api_test.rest para os testes completos do Kanban

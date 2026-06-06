@@ -1,0 +1,95 @@
+### Configuração de Variáveis de Ambiente
+@url_base = http://localhost:3000/crmFinanceiro
+@contentType = application/json
+@token = 
+@responsavel_fin_id = 5
+@pedido_id = 2
+@id_do_card = 7
+
+
+
+### 1. Busca todos os cards do Kanban Financeiro (Geral)
+GET {{url_base}}/
+Accept: application/json
+Authorization: Bearer {{token}}
+
+### 2. Busca cards filtrados por um responsável específico
+GET {{url_base}}/?responsavel_fin_id={{responsavel_fin_id}}
+Accept: application/json
+Authorization: Bearer {{token}}
+
+### 3. Busca cards filtrados por uma coluna/etapa
+GET {{url_base}}/?etapa_kanban=Liberado%20para%20Produção
+Accept: application/json
+Authorization: Bearer {{token}}
+
+### 4. Criar um card no financeiro
+POST {{url_base}}/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "pedido_id": {{pedido_id}},
+  "responsavel_fin_id": 2,
+  "etapa_kanban": "Validando UC10",
+  "valor_total_pedido": 15000.00,
+  "status_pagamento": "Pendente",
+  "custo_matriz_externa": 0.00,
+  "observacoes_financeiras": "Aguardando confirmação do PIX de entrada."
+}
+
+### Criar card sem pedido_id (erro esperado)
+POST {{url_base}}/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "responsavel_fin_id": 1,
+  "etapa_kanban": "Validando UC10"
+}
+
+### 5. Atualizar dados do card
+PUT {{url_base}}/{{id_do_card}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "responsavel_fin_id": {{responsavel_fin_id}},
+  "etapa_kanban": "Em produção",
+  "valor_total_pedido": 15000.00,
+  "status_pagamento": "Parcialmente Pago",
+  "custo_matriz_externa": 1200.00,
+  "matriz_externa_paga": false,
+  "liberado_para_producao": false,
+  "data_vencimento_proxima": "2026-06-01",
+  "observacoes_financeiras": "Entrada de R$ 7.500 paga. Marcos Silva assumiu a conta."
+}
+
+### 6. GATILHO: Liberar para Produção (Executa transação SQL)
+PATCH {{url_base}}/{{id_do_card}}/liberar-producao
+Authorization: Bearer {{token}}
+
+{}
+
+### 7. Atualizar rapidamente o Status de Pagamento
+PATCH {{url_base}}/{{id_do_card}}/status-pagamento
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status_pagamento": "Quitado"
+}
+
+### Atualizar status para valor inválido (erro esperado se houver Enum)
+PATCH {{url_base}}/{{id_do_card}}/status-pagamento
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status_pagamento": "INVALIDO"
+}
+
+### 8. Deletar um card do financeiro
+DELETE {{url_base}}/{{id_do_card}}
+Accept: application/json
+Authorization: Bearer {{token}}
