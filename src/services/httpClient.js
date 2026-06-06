@@ -1,10 +1,19 @@
 import { URL_BASE_API, TEMPO_LIMITE_API_MS } from '../config/env';
-import { obterTokenAutenticacao } from './sessionService';
+import { limparSessao, obterTokenAutenticacao } from './sessionService';
 import { API_FIELDS } from '../config/apiContract';
 
 const CABECALHOS_PADRAO = {
     'Content-Type': 'application/json',
 };
+
+export class ApiError extends Error {
+    constructor(mensagem, { status = 0, payload = null } = {}) {
+        super(mensagem);
+        this.name = 'ApiError';
+        this.status = status;
+        this.payload = payload;
+    }
+}
 
 function deveSerializarComoJson(corpo) {
     return corpo && !(corpo instanceof FormData);
@@ -29,7 +38,74 @@ function extrairCargaApi(carga) {
     return carga;
 }
 
-export async function requisicao(caminho, { metodo = 'GET', cabecalhos = {}, corpo, tempoLimiteMs = TEMPO_LIMITE_API_MS } = {}) {
+function normalizarUrlBase(urlBase) {
+    return urlBase.endsWith('/') ? urlBase.slice(0, -1) : urlBase;
+}
+
+function normalizarCaminho(caminho) {
+    if (!caminho) return '';
+    return caminho.startsWith('/') ? caminho : `/${caminho}`;
+}
+
+function montarQueryString(query = {}) {
+    const entradas = Object.entries(query).filter(([, valor]) => valor !== undefined && valor !== null && valor !== '');
+    if (!entradas.length) return '';
+
+    const parametros = new URLSearchParams();
+    entradas.forEach(([chave, valor]) => {
+        if (Array.isArray(valor)) {
+            valor.forEach((item) => parametros.append(chave, String(item)));
+            return;
+        }
+
+        parametros.append(chave, String(valor));
+    });
+
+    return `?${parametros.toString()}`;
+}
+
+function montarUrl(caminho, query) {
+    return `${normalizarUrlBase(URL_BASE_API)}${normalizarCaminho(caminho)}${montarQueryString(query)}`;
+}
+
+async function lerCargaResposta(resposta) {
+    if (resposta.status === 204) {
+        return null;
+    }
+
+    const tipoConteudo = resposta.headers.get('content-type') || '';
+    if (tipoConteudo.includes('application/json')) {
+        return await resposta.json();
+    }
+
+    const texto = await resposta.text();
+    return texto || null;
+}
+
+function mensagemErroApi(carga) {
+    if (!carga) {
+        return 'Erro ao processar requisicao';
+    }
+
+    if (typeof carga === 'string') {
+        return carga;
+    }
+
+    return carga.message || 'Erro ao processar requisicao';
+}
+
+function tratarSessaoExpirada(status) {
+    if (status !== 401) {
+        return;
+    }
+
+    limparSessao();
+    if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('ipf:auth:expired'));
+    }
+}
+
+export async function requisicao(caminho, { metodo = 'GET', cabecalhos = {}, corpo, query, tempoLimiteMs = TEMPO_LIMITE_API_MS } = {}) {
     const controlador = new AbortController();
     const idTempoLimite = setTimeout(() => controlador.abort(), tempoLimiteMs);
 
@@ -49,26 +125,34 @@ export async function requisicao(caminho, { metodo = 'GET', cabecalhos = {}, cor
         : corpo;
 
     try {
-        const resposta = await fetch(`${URL_BASE_API}${caminho}`, {
+        const resposta = await fetch(montarUrl(caminho, query), {
             method: metodo,
             headers: cabecalhosFinais,
             body: corpoSerializado,
             signal: controlador.signal,
         });
 
-        const tipoConteudo = resposta.headers.get('content-type') || '';
-        const carga = tipoConteudo.includes('application/json')
-            ? await resposta.json()
-            : await resposta.text();
+        const carga = await lerCargaResposta(resposta);
 
         if (!resposta.ok) {
-            const mensagem = typeof carga === 'string' && carga
-                ? carga
-                : carga?.message || 'Erro ao processar requisicao';
-            throw new Error(mensagem);
+            tratarSessaoExpirada(resposta.status);
+            throw new ApiError(mensagemErroApi(carga), {
+                status: resposta.status,
+                payload: carga,
+            });
         }
 
         return extrairCargaApi(carga);
+    } catch (erro) {
+        if (erro?.name === 'AbortError') {
+            throw new ApiError('Tempo limite da requisicao excedido.', { status: 408 });
+        }
+
+        if (erro instanceof ApiError) {
+            throw erro;
+        }
+
+        throw new ApiError(erro?.message || 'Falha de comunicacao com o servidor.');
     } finally {
         clearTimeout(idTempoLimite);
     }
