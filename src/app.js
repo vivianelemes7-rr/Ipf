@@ -18,6 +18,7 @@ const matrizRoutes = require('./routes/matrizRoutes');
 const vendaRoutes = require('./routes/vendaRoutes');
 const arquiteturaRoutes = require('./routes/arquiteturaRoutes');
 const gerenciaRoutes = require('./routes/gerenciaRoutes');
+const kanbanRoutes = require('./routes/kanbanRoutes');
 const { manipuladorErros, rotaNaoEncontrada } = require('./middlewares/erroMiddleware');
 
 const app = express();
@@ -47,12 +48,13 @@ app.use('/matriz', matrizRoutes);
 app.use('/vendas', vendaRoutes);
 app.use('/arquitetura', arquiteturaRoutes);
 app.use('/gerencia', gerenciaRoutes);
+app.use('/kanban', kanbanRoutes);
 
 const PREFIXOS_API = [
-    '/auth', '/funcionarios', '/permissoes', '/leads', '/clientes', '/crm', 'crmFinanceiro',
+    '/auth', '/funcionarios', '/permissoes', '/leads', '/clientes', '/crm', '/crmFinanceiro',
     '/vendas', '/producao', '/pedidos', '/matriz', '/notificacoes-com',
     '/notificacoes-fin', '/notificacoes-arq', '/notificacoes-producao',
-    '/notificacoes-gerencia', '/arquitetura', '/gerencia'
+    '/notificacoes-gerencia', '/arquitetura', '/gerencia', '/kanban'
 ];
 
 app.use((req, res, next) => {

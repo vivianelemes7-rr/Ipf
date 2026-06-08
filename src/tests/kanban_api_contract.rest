@@ -1,0 +1,41 @@
+# Kanban API Contract — GET/POST/PATCH/DELETE /kanban/*
+# Tokens: copy from testeAutenticacao.rest or use variables
+
+@url_base = http://localhost:3000
+@admin_token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJhZG1pbkBpcGYuY29tIiwiY2FyZ28iOiJBZG1pbmlzdHJhZG9yIiwicm9sZSI6ImFkbWluaXN0cmFkb3IiLCJwZXJtaXNzb2VzIjp7Im1vZHVsb192ZW5kYXMiOnRydWUsIm1vZHVsb19maW5hbmNlaXJvIjp0cnVlLCJtb2R1bG9fcHJvZHVjYW8iOnRydWUsIm1vZHVsb19hcnF1aXRldHVyYSI6dHJ1ZSwicG9kZV9lZGl0YXIiOnRydWUsInBvZGVfZGVsZXRhciI6dHJ1ZSwidmVyX2FwZW5hc19wcm9wcmlvIjpmYWxzZSwicG9kZV9yZXRyb2NlZGVyX2NhcmQiOnRydWUsInBvZGVfbW92ZXJfcXVhbHF1ZXJfZXRhcGEiOnRydWUsInBvZGVfcmVhYnJpcl9jYXJkIjp0cnVlLCJwb2RlX2Fwcm92YXJfZW50cmVnYV9ldGFwYSI6dHJ1ZSwicG9kZV9mb3JjYXJfdHJhbnNpY2FvIjp0cnVlLCJwb2RlX3Ryb2Nhcl9yZXNwb25zYXZlbCI6dHJ1ZSwicG9kZV9hc3N1bWlyX2NhcmQiOnRydWUsInBvZGVfYWx0ZXJhcl9wcmF6b3MiOnRydWUsInBvZGVfYWx0ZXJhcl9wcmlvcmlkYWRlIjp0cnVlLCJwb2RlX3Zlcl92YWxvcmVzIjp0cnVlLCJwb2RlX2FycXVpdmFyX2NhcmQiOnRydWUsInBvZGVfZGVsZXRhciI6dHJ1ZSwicG9kZV9lZGl0YXJfY29tZW50YXJpb3Nfb3V0cm9zIjp0cnVlLCJwb2RlX21hcmNhcl9pbXBlZGltZW50byI6dHJ1ZSwicG9kZV9kZXN0cmF2YXJfaW1wZWRpbWVudG8iOnRydWV9LCJpYXQiOjE3ODA3NzgyMTUsImV4cCI6MTc4MDc4MTgxNX0.C7aF-Ao2hpuTk56iJmEc_iiSdOgaqOiwvBDmNruucss
+
+### 1. List All Boards (GET /kanban/boards)
+GET {{url_base}}/kanban/boards
+Authorization: Bearer {{admin_token}}
+
+### 2. Create Card in Manager Board (POST /kanban/boards/gerente/cards)
+# @name createCard
+POST {{url_base}}/kanban/boards/gerente/cards
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "columnId": "pendente",
+  "title": "Nova Tarefa Gerencial do Teste",
+  "lines": ["Linha detalhe 1", "Linha detalhe 2"],
+  "footer": "Prioridade: Alta",
+  "processTag": "especial"
+}
+
+### 3. Move/Patch Card in Manager Board (PATCH /kanban/boards/gerente/cards/{cardId})
+# Use the ID returned from the creation step (e.g. 1)
+PATCH {{url_base}}/kanban/boards/gerente/cards/1
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "columnId": "andamento",
+  "title": "Nova Tarefa Gerencial do Teste (Atualizado)",
+  "lines": ["Linha detalhe 1", "Linha detalhe 2 atualizada"],
+  "footer": "Prioridade: Crítica",
+  "processTag": "normal"
+}
+
+### 4. Delete Card in Manager Board (DELETE /kanban/boards/gerente/cards/{cardId})
+DELETE {{url_base}}/kanban/boards/gerente/cards/1
+Authorization: Bearer {{admin_token}}
