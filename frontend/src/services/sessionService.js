@@ -1,5 +1,6 @@
 const CHAVES_ARMAZENAMENTO = {
     TOKEN_AUTENTICACAO: 'authToken',
+    TOKEN_LEGADO: 'token',
     USUARIO: 'currentUser',
     PAPEL: 'loginType',
 };
@@ -20,6 +21,7 @@ function escreverJson(chave, valor) {
 export function persistirSessao({ token = '', usuario = null, papel = '' } = {}) {
     if (token) {
         localStorage.setItem(CHAVES_ARMAZENAMENTO.TOKEN_AUTENTICACAO, token);
+        localStorage.setItem(CHAVES_ARMAZENAMENTO.TOKEN_LEGADO, token);
     }
 
     if (usuario) {
@@ -33,13 +35,13 @@ export function persistirSessao({ token = '', usuario = null, papel = '' } = {})
 
 export function limparSessao() {
     localStorage.removeItem(CHAVES_ARMAZENAMENTO.TOKEN_AUTENTICACAO);
-    localStorage.removeItem('token');
+    localStorage.removeItem(CHAVES_ARMAZENAMENTO.TOKEN_LEGADO);
     localStorage.removeItem(CHAVES_ARMAZENAMENTO.USUARIO);
     localStorage.removeItem(CHAVES_ARMAZENAMENTO.PAPEL);
 }
 
 export function obterTokenAutenticacao() {
-    return localStorage.getItem(CHAVES_ARMAZENAMENTO.TOKEN_AUTENTICACAO) || localStorage.getItem('token') || '';
+    return localStorage.getItem(CHAVES_ARMAZENAMENTO.TOKEN_AUTENTICACAO) || localStorage.getItem(CHAVES_ARMAZENAMENTO.TOKEN_LEGADO) || '';
 }
 
 export function obterUsuarioAtual() {
@@ -48,4 +50,16 @@ export function obterUsuarioAtual() {
 
 export function obterPapelUsuarioAtual() {
     return localStorage.getItem(CHAVES_ARMAZENAMENTO.PAPEL) || obterUsuarioAtual()?.role || '';
+}
+
+export function obterSessaoAtual() {
+    return {
+        token: obterTokenAutenticacao(),
+        usuario: obterUsuarioAtual(),
+        papel: obterPapelUsuarioAtual(),
+    };
+}
+
+export function estaAutenticado() {
+    return Boolean(obterTokenAutenticacao());
 }
