@@ -7,33 +7,96 @@ import { sair } from './services/authService';
 const FORMULARIO_INICIAL = {
     nome: '',
     email: '',
-    telefone: '',
-    metaMensal: '',
-    regiao: '',
+    senha: '',
+    departamento: 'Vendas',
 };
 
 export default function CadastroVendedor() {
     const navegar = useNavigate();
     const papelUsuario = obterPapelUsuarioAtual();
-    const permitido = useMemo(() => papelUsuario === 'gerente' || papelUsuario === 'administrador', [papelUsuario]);
+
+    const permitido = useMemo(
+        () => papelUsuario === 'gerente' || papelUsuario === 'administrador',
+        [papelUsuario]
+    );
+
     const [dadosFormulario, definirDadosFormulario] = useState(FORMULARIO_INICIAL);
     const [retorno, definirRetorno] = useState('');
+    const [erro, definirErro] = useState('');
+    const [salvando, definirSalvando] = useState(false);
 
     const aoAlterar = (event) => {
         const { name, value } = event.target;
-        definirDadosFormulario((anterior) => ({ ...anterior, [name]: value }));
+
+        definirDadosFormulario((anterior) => ({
+            ...anterior,
+            [name]: value,
+        }));
     };
 
-    const aoEnviar = (event) => {
+    const validarFormulario = () => {
+        const nome = dadosFormulario.nome.trim();
+        const email = dadosFormulario.email.trim();
+        const senha = dadosFormulario.senha.trim();
+
+        if (!nome) {
+            return 'Informe o nome do vendedor.';
+        }
+
+        if (!email) {
+            return 'Informe o e-mail do vendedor.';
+        }
+
+        if (!/\S+@\S+\.\S+/.test(email)) {
+            return 'Informe um e-mail válido.';
+        }
+
+        if (!senha) {
+            return 'Informe uma senha para o vendedor.';
+        }
+
+        if (senha.length < 6) {
+            return 'A senha deve ter no mínimo 6 caracteres.';
+        }
+
+        return '';
+    };
+
+    const aoEnviar = async (event) => {
         event.preventDefault();
 
         if (!permitido) {
             return;
         }
 
-        criarOuAtualizarVendedor(dadosFormulario);
-        definirRetorno('Perfil de vendedor salvo com sucesso.');
-        definirDadosFormulario(FORMULARIO_INICIAL);
+        definirErro('');
+        definirRetorno('');
+
+        const erroValidacao = validarFormulario();
+
+        if (erroValidacao) {
+            definirErro(erroValidacao);
+            return;
+        }
+
+        definirSalvando(true);
+
+        try {
+            await criarOuAtualizarVendedor({
+                nome: dadosFormulario.nome,
+                email: dadosFormulario.email,
+                senha: dadosFormulario.senha,
+                departamento: dadosFormulario.departamento || 'Vendas',
+            });
+
+            definirRetorno('Vendedor salvo com sucesso no back.');
+            definirDadosFormulario(FORMULARIO_INICIAL);
+        } catch (erroRequisicao) {
+            console.error('Erro ao salvar vendedor:', erroRequisicao);
+            definirErro(erroRequisicao.message || 'Não foi possível salvar o vendedor.');
+        } finally {
+            definirSalvando(false);
+        }
     };
 
     if (!permitido) {
@@ -49,6 +112,7 @@ export default function CadastroVendedor() {
                             >
                                 Alterar senha
                             </button>
+
                             <button
                                 type="button"
                                 className="btn btn-outline-danger"
@@ -60,9 +124,16 @@ export default function CadastroVendedor() {
                                 Sair
                             </button>
                         </div>
+
                         <h1 className="mb-3">Cadastro de Vendedor</h1>
-                        <p className="lead">Acesso restrito para gerencia.</p>
-                        <button onClick={() => navegar('/dashboard')} className="btn btn-primary mt-3">Voltar ao Dashboard</button>
+                        <p className="lead">Acesso restrito para gerência.</p>
+
+                        <button
+                            onClick={() => navegar('/dashboard')}
+                            className="btn btn-primary mt-3"
+                        >
+                            Voltar ao Dashboard
+                        </button>
                     </div>
                 </div>
             </div>
@@ -81,6 +152,7 @@ export default function CadastroVendedor() {
                         >
                             Alterar senha
                         </button>
+
                         <button
                             type="button"
                             className="btn btn-outline-danger"
@@ -92,13 +164,25 @@ export default function CadastroVendedor() {
                             Sair
                         </button>
                     </div>
+
                     <h1 className="mb-3">Cadastro de Vendedor</h1>
-                    <p className="lead">Crie ou atualize o perfil de um vendedor para acompanhamento de metas.</p>
+                    <p className="lead">
+                        Crie um perfil de vendedor usando a rota real do back.
+                    </p>
+
+                    {erro && (
+                        <div className="alert alert-danger" role="alert">
+                            {erro}
+                        </div>
+                    )}
 
                     <form onSubmit={aoEnviar}>
                         <div className="row g-3">
                             <div className="col-md-6">
-                                <label htmlFor="nome" className="form-label">Nome completo</label>
+                                <label htmlFor="nome" className="form-label">
+                                    Nome completo
+                                </label>
+
                                 <input
                                     id="nome"
                                     name="nome"
@@ -111,7 +195,10 @@ export default function CadastroVendedor() {
                             </div>
 
                             <div className="col-md-6">
-                                <label htmlFor="email" className="form-label">E-mail corporativo</label>
+                                <label htmlFor="email" className="form-label">
+                                    E-mail corporativo
+                                </label>
+
                                 <input
                                     id="email"
                                     name="email"
@@ -123,50 +210,64 @@ export default function CadastroVendedor() {
                                 />
                             </div>
 
-                            <div className="col-md-4">
-                                <label htmlFor="telefone" className="form-label">Telefone</label>
+                            <div className="col-md-6">
+                                <label htmlFor="senha" className="form-label">
+                                    Senha inicial
+                                </label>
+
                                 <input
-                                    id="telefone"
-                                    name="telefone"
+                                    id="senha"
+                                    name="senha"
+                                    type="password"
+                                    minLength="6"
+                                    className="form-control"
+                                    value={dadosFormulario.senha}
+                                    onChange={aoAlterar}
+                                    required
+                                />
+                            </div>
+
+                            <div className="col-md-6">
+                                <label htmlFor="departamento" className="form-label">
+                                    Departamento
+                                </label>
+
+                                <input
+                                    id="departamento"
+                                    name="departamento"
                                     type="text"
                                     className="form-control"
-                                    value={dadosFormulario.telefone}
+                                    value={dadosFormulario.departamento}
                                     onChange={aoAlterar}
+                                    placeholder="Vendas"
                                 />
                             </div>
 
-                            <div className="col-md-4">
-                                <label htmlFor="metaMensal" className="form-label">Meta mensal (R$)</label>
-                                <input
-                                    id="metaMensal"
-                                    name="metaMensal"
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    className="form-control"
-                                    value={dadosFormulario.metaMensal}
-                                    onChange={aoAlterar}
-                                />
-                            </div>
+                            <div className="d-flex gap-2 mt-4">
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary"
+                                    disabled={salvando}
+                                >
+                                    {salvando ? 'Salvando...' : 'Salvar vendedor'}
+                                </button>
 
-                            <div className="col-md-4">
-                                <label htmlFor="regiao" className="form-label">Regiao de atendimento</label>
-                                <input
-                                    id="regiao"
-                                    name="regiao"
-                                    type="text"
-                                    className="form-control"
-                                    value={dadosFormulario.regiao}
-                                    onChange={aoAlterar}
-                                />
-                            </div>
-                        </div>
+                                <button
+                                    type="button"
+                                    className="btn btn-outline-secondary"
+                                    onClick={() => navegar('/vendedores')}
+                                >
+                                    Ver vendedores
+                                </button>
 
-                        <div className="d-flex gap-2 mt-4">
-                            <button type="submit" className="btn btn-primary">Salvar perfil</button>
-                            <button type="button" className="btn btn-outline-secondary" onClick={() => navegar('/dashboard')}>
-                                Voltar ao Dashboard
-                            </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-outline-secondary"
+                                    onClick={() => navegar('/dashboard')}
+                                >
+                                    Voltar ao Dashboard
+                                </button>
+                            </div>
                         </div>
                     </form>
 

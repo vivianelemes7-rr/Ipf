@@ -8,7 +8,8 @@ const FuncionarioModel = {
         const query = `
             SELECT f.id, f.nome, f.email, f.cargo, f.status_ativo, f.departamento, f.data_cadastro
             FROM funcionarios f
-            ORDER BY f.id`;
+            ORDER BY f.id
+        `;
         const [linhas] = await conexao.query(query);
         return linhas;
     },
@@ -18,7 +19,8 @@ const FuncionarioModel = {
             SELECT f.id, f.nome, f.email, f.cargo, f.status_ativo, f.departamento, f.data_cadastro
             FROM funcionarios f
             WHERE LOWER(f.cargo) = LOWER(?)
-            ORDER BY f.nome`;
+            ORDER BY f.nome
+        `;
         const [linhas] = await conexao.query(query, [cargo]);
         return linhas;
     },
@@ -27,7 +29,8 @@ const FuncionarioModel = {
         const query = `
             SELECT f.id, f.nome, f.email, f.cargo, f.status_ativo, f.departamento, f.data_cadastro
             FROM funcionarios f
-            WHERE f.id = ?`;
+            WHERE f.id = ?
+        `;
         const [linhas] = await conexao.query(query, [id]);
         return linhas[0];
     },
@@ -36,7 +39,8 @@ const FuncionarioModel = {
         const query = `
             SELECT f.id, f.nome, f.email, f.cargo, f.status_ativo, f.departamento, f.data_cadastro
             FROM funcionarios f
-            WHERE f.email = ?`;
+            WHERE f.email = ?
+        `;
         const [linhas] = await conexao.query(query, [email]);
         return linhas[0];
     },
@@ -46,14 +50,15 @@ const FuncionarioModel = {
             SELECT COUNT(*) AS total
             FROM funcionarios
             WHERE LOWER(cargo) = 'administrador'
-              AND status_ativo = 1`;
+              AND status_ativo = 1
+        `;
         const [linhas] = await conexao.query(query);
         return Number(linhas[0]?.total || 0) > 0;
     },
 
     async criar(dadosFunc) {
         const [res] = await conexao.query(
-            `INSERT INTO funcionarios (nome, email, senha, cargo, departamento, status_ativo) VALUES (?, ?, ?, ?, ?, ?)`,
+            'INSERT INTO funcionarios (nome, email, senha, cargo, departamento, status_ativo) VALUES (?, ?, ?, ?, ?, ?)',
             [dadosFunc.nome, dadosFunc.email, dadosFunc.senha, dadosFunc.cargo, dadosFunc.departamento, dadosFunc.status_ativo]
         );
         return res.insertId;

@@ -1,23 +1,92 @@
-import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { sair } from './services/authService';
+import { requisicao } from './services/httpClient';
+
+const FORMULARIO_INICIAL = {
+    senhaAtual: '',
+    senhaNova: '',
+    confirmarSenha: '',
+};
 
 export default function AlterarSenha() {
     const navegar = useNavigate();
-    const [senhaAtual, definirSenhaAtual] = useState('');
-    const [novaSenha, definirNovaSenha] = useState('');
-    const [confirmarSenha, definirConfirmarSenha] = useState('');
 
-    const aoEnviar = (event) => {
-        event.preventDefault();
-        if (novaSenha !== confirmarSenha) {
-            alert('As senhas não coincidem.');
+    const [formulario, definirFormulario] = useState(FORMULARIO_INICIAL);
+    const [erro, definirErro] = useState('');
+    const [retorno, definirRetorno] = useState('');
+    const [salvando, definirSalvando] = useState(false);
+
+    const aoAlterar = (evento) => {
+        const { name, value } = evento.target;
+
+        definirFormulario((anterior) => ({
+            ...anterior,
+            [name]: value,
+        }));
+    };
+
+    const validarFormulario = () => {
+        const senhaAtual = formulario.senhaAtual.trim();
+        const senhaNova = formulario.senhaNova.trim();
+        const confirmarSenha = formulario.confirmarSenha.trim();
+
+        if (!senhaAtual) {
+            return 'Informe sua senha atual.';
+        }
+
+        if (!senhaNova) {
+            return 'Informe a nova senha.';
+        }
+
+        if (senhaNova.length < 8) {
+            return 'A nova senha deve ter no mínimo 8 caracteres.';
+        }
+
+        if (!confirmarSenha) {
+            return 'Confirme a nova senha.';
+        }
+
+        if (senhaNova !== confirmarSenha) {
+            return 'As senhas não coincidem.';
+        }
+
+        return '';
+    };
+
+    const aoEnviar = async (evento) => {
+        evento.preventDefault();
+
+        definirErro('');
+        definirRetorno('');
+
+        const erroValidacao = validarFormulario();
+
+        if (erroValidacao) {
+            definirErro(erroValidacao);
             return;
         }
-        alert('Senha alterada com sucesso!');
-        definirSenhaAtual('');
-        definirNovaSenha('');
-        definirConfirmarSenha('');
+
+        definirSalvando(true);
+
+        try {
+            const resposta = await requisicao('/auth/alterar-senha', {
+                metodo: 'PATCH',
+                corpo: {
+                    senhaAtual: formulario.senhaAtual,
+                    senhaNova: formulario.senhaNova,
+                    confirmarSenha: formulario.confirmarSenha,
+                },
+            });
+
+            definirRetorno(resposta?.mensagem || 'Senha alterada com sucesso!');
+            definirFormulario(FORMULARIO_INICIAL);
+        } catch (erroRequisicao) {
+            console.error('Erro ao alterar senha:', erroRequisicao);
+            definirErro(erroRequisicao.message || 'Não foi possível alterar a senha.');
+        } finally {
+            definirSalvando(false);
+        }
     };
 
     return (
@@ -38,40 +107,85 @@ export default function AlterarSenha() {
                                     Sair
                                 </button>
                             </div>
+
                             <h1 className="mb-3">Alterar Senha</h1>
+                            <p className="text-muted">
+                                Informe sua senha atual e defina uma nova senha.
+                            </p>
+
+                            {erro && (
+                                <div className="alert alert-danger" role="alert">
+                                    {erro}
+                                </div>
+                            )}
+
+                            {retorno && (
+                                <div className="alert alert-success" role="status">
+                                    {retorno}
+                                </div>
+                            )}
+
                             <form onSubmit={aoEnviar}>
                                 <div className="mb-3">
-                                    <label className="form-label">Senha atual</label>
+                                    <label htmlFor="senhaAtual" className="form-label">
+                                        Senha atual
+                                    </label>
                                     <input
+                                        id="senhaAtual"
+                                        name="senhaAtual"
                                         type="password"
                                         className="form-control"
-                                        value={senhaAtual}
-                                        onChange={(e) => definirSenhaAtual(e.target.value)}
+                                        value={formulario.senhaAtual}
+                                        onChange={aoAlterar}
                                         required
                                     />
                                 </div>
+
                                 <div className="mb-3">
-                                    <label className="form-label">Nova senha</label>
+                                    <label htmlFor="senhaNova" className="form-label">
+                                        Nova senha
+                                    </label>
                                     <input
+                                        id="senhaNova"
+                                        name="senhaNova"
                                         type="password"
                                         className="form-control"
-                                        value={novaSenha}
-                                        onChange={(e) => definirNovaSenha(e.target.value)}
+                                        value={formulario.senhaNova}
+                                        onChange={aoAlterar}
                                         required
                                     />
                                 </div>
+
                                 <div className="mb-4">
-                                    <label className="form-label">Confirmar nova senha</label>
+                                    <label htmlFor="confirmarSenha" className="form-label">
+                                        Confirmar nova senha
+                                    </label>
                                     <input
+                                        id="confirmarSenha"
+                                        name="confirmarSenha"
                                         type="password"
                                         className="form-control"
-                                        value={confirmarSenha}
-                                        onChange={(e) => definirConfirmarSenha(e.target.value)}
+                                        value={formulario.confirmarSenha}
+                                        onChange={aoAlterar}
                                         required
                                     />
                                 </div>
-                                <button type="submit" className="btn btn-primary me-2">Salvar</button>
-                                <button type="button" onClick={() => navegar('/dashboard')} className="btn btn-outline-secondary">Cancelar</button>
+
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary me-2"
+                                    disabled={salvando}
+                                >
+                                    {salvando ? 'Salvando...' : 'Salvar'}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => navegar('/dashboard')}
+                                    className="btn btn-outline-secondary"
+                                >
+                                    Cancelar
+                                </button>
                             </form>
                         </div>
                     </div>
