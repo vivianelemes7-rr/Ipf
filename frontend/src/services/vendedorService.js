@@ -1,80 +1,98 @@
-const CHAVE_ARMAZENAMENTO = 'vendedores';
+import { requisicao } from './httpClient';
 
-function lerVendedores() {
-    try {
-        const bruto = localStorage.getItem(CHAVE_ARMAZENAMENTO);
-        const parseado = bruto ? JSON.parse(bruto) : [];
-        return Array.isArray(parseado) ? parseado : [];
-    } catch {
-        return [];
-    }
+const ENDPOINT_VENDEDORES = '/funcionarios/vendedores';
+
+function normalizarVendedor(vendedor) {
+    return {
+        id: vendedor.id,
+        nome: vendedor.nome || '',
+        email: vendedor.email || '',
+        cargo: vendedor.cargo || 'Vendedor',
+        statusAtivo: Boolean(vendedor.status_ativo ?? vendedor.statusAtivo ?? true),
+        departamento: vendedor.departamento || 'Vendas',
+        dataCadastro: vendedor.data_cadastro || vendedor.dataCadastro || '',
+    };
 }
 
-function escreverVendedores(vendedores) {
-    localStorage.setItem(CHAVE_ARMAZENAMENTO, JSON.stringify(vendedores));
+export async function obterTodosVendedores() {
+    const resposta = await requisicao(ENDPOINT_VENDEDORES);
+
+    const lista = Array.isArray(resposta)
+        ? resposta
+        : Array.isArray(resposta?.dados)
+            ? resposta.dados
+            : Array.isArray(resposta?.data)
+                ? resposta.data
+                : Array.isArray(resposta?.vendedores)
+                    ? resposta.vendedores
+                    : [];
+
+    return lista.map(normalizarVendedor);
 }
 
-export function obterTodosVendedores() {
-    return lerVendedores();
-}
-
-export function encontrarVendedorPorEmail(email = '') {
+export async function encontrarVendedorPorEmail(email = '') {
     const emailNormalizado = email.trim().toLowerCase();
+
     if (!emailNormalizado) {
         return null;
     }
 
-    return lerVendedores().find((vendedor) => vendedor.email?.toLowerCase() === emailNormalizado) || null;
+    const vendedores = await obterTodosVendedores();
+
+    return vendedores.find((vendedor) =>
+        vendedor.email?.toLowerCase() === emailNormalizado
+    ) || null;
 }
 
-export function criarOuAtualizarVendedor(dadosVendedor) {
-    const vendedores = lerVendedores();
-    const emailNormalizado = dadosVendedor.email.trim().toLowerCase();
-
+export async function criarOuAtualizarVendedor(dadosVendedor) {
     const carga = {
-        id: dadosVendedor.id || emailNormalizado,
-        nome: dadosVendedor.nome.trim(),
-        email: emailNormalizado,
-        telefone: dadosVendedor.telefone?.trim() || '',
-        metaMensal: Number(dadosVendedor.metaMensal || 0),
-        regiao: dadosVendedor.regiao?.trim() || '',
-        criadoEm: dadosVendedor.criadoEm || new Date().toISOString(),
-        atualizadoEm: new Date().toISOString(),
+        nome: dadosVendedor.nome?.trim(),
+        email: dadosVendedor.email?.trim().toLowerCase(),
+        departamento: dadosVendedor.departamento?.trim() || 'Vendas',
     };
 
-    const indiceExistente = vendedores.findIndex((vendedor) => vendedor.email?.toLowerCase() === emailNormalizado);
-
-    if (indiceExistente >= 0) {
-        const existente = vendedores[indiceExistente];
-        const atualizado = {
-            ...existente,
-            ...carga,
-            criadoEm: existente.criadoEm || carga.criadoEm,
-        };
-
-        vendedores[indiceExistente] = atualizado;
-        escreverVendedores(vendedores);
-        return atualizado;
+    if (dadosVendedor.senha?.trim()) {
+        carga.senha = dadosVendedor.senha.trim();
     }
 
-    vendedores.push(carga);
-    escreverVendedores(vendedores);
-    return carga;
+    if (dadosVendedor.password?.trim()) {
+        carga.password = dadosVendedor.password.trim();
+    }
+
+    if (dadosVendedor.id) {
+        const resposta = await requisicao(`${ENDPOINT_VENDEDORES}/${dadosVendedor.id}`, {
+            metodo: 'PUT',
+            corpo: carga,
+        });
+
+        return resposta?.dados
+            ? normalizarVendedor(resposta.dados)
+            : { id: dadosVendedor.id, ...carga };
+    }
+
+    const resposta = await requisicao(ENDPOINT_VENDEDORES, {
+        metodo: 'POST',
+        corpo: carga,
+    });
+
+    return resposta?.dados
+        ? normalizarVendedor(resposta.dados)
+        : {
+            id: resposta?.id,
+            ...carga,
+            cargo: 'Vendedor',
+            statusAtivo: true,
+        };
 }
 
-export function excluirVendedor(email = '') {
-    const emailNormalizado = email.trim().toLowerCase();
-    if (!emailNormalizado) {
+export async function excluirVendedor(id) {
+    if (!id) {
         return false;
     }
 
-    const vendedores = lerVendedores();
-    const filtrados = vendedores.filter((v) => v.email?.toLowerCase() !== emailNormalizado);
+    await requisicao(`${ENDPOINT_VENDEDORES}/${id}/desativar`, {
+        metodo: 'PATCH',
+    });
 
-    if (filtrados.length === vendedores.length) {
-        return false;
-    }
-
-    escreverVendedores(filtrados);
     return true;
 }

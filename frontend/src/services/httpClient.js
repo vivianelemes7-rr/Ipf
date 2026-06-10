@@ -7,8 +7,8 @@ const CABECALHOS_PADRAO = {
 };
 
 export class ApiError extends Error {
-    constructor(mensagem, { status = 0, payload = null } = {}) {
-        super(mensagem);
+    constructor(message, { status = 0, payload = null } = {}) {
+        super(message);
         this.name = 'ApiError';
         this.status = status;
         this.payload = payload;
@@ -84,18 +84,49 @@ async function lerCargaResposta(resposta) {
 
 function mensagemErroApi(carga) {
     if (!carga) {
-        return 'Erro ao processar requisicao';
+        return 'Erro ao processar requisição';
     }
 
     if (typeof carga === 'string') {
         return carga;
     }
 
-    return carga.message || 'Erro ao processar requisicao';
+    if (Array.isArray(carga.erros) && carga.erros.length > 0) {
+        return carga.erros.join(' ');
+    }
+
+    if (Array.isArray(carga.errors) && carga.errors.length > 0) {
+        return carga.errors.join(' ');
+    }
+
+    return (
+        carga.mensagem ||
+        carga.message ||
+        carga.erro ||
+        carga.error ||
+        'Erro ao processar requisição'
+    );
 }
 
-function tratarSessaoExpirada(status) {
+function deveTratarComoSessaoExpirada(status, mensagem = '') {
     if (status !== 401) {
+        return false;
+    }
+
+    const texto = mensagem.toLowerCase();
+
+    return (
+        texto.includes('token') ||
+        texto.includes('sessão') ||
+        texto.includes('sessao') ||
+        texto.includes('expirou') ||
+        texto.includes('não autorizado') ||
+        texto.includes('nao autorizado')
+    );
+}
+
+function tratarSessaoExpirada(status, mensagem) {
+    if (!deveTratarComoSessaoExpirada(status, mensagem)) {
         return;
     }
 
@@ -121,7 +152,7 @@ export async function requisicao(caminho, { metodo = 'GET', cabecalhos = {}, cor
     };
 
     const corpoSerializado = deveSerializarComoJson(corpo)
-        ? (corpo ? JSON.stringify(corpo) : undefined)
+        ? JSON.stringify(corpo)
         : corpo;
 
     try {
@@ -135,8 +166,11 @@ export async function requisicao(caminho, { metodo = 'GET', cabecalhos = {}, cor
         const carga = await lerCargaResposta(resposta);
 
         if (!resposta.ok) {
-            tratarSessaoExpirada(resposta.status);
-            throw new ApiError(mensagemErroApi(carga), {
+            const mensagemErro = mensagemErroApi(carga);
+
+            tratarSessaoExpirada(resposta.status, mensagemErro);
+
+            throw new ApiError(mensagemErro, {
                 status: resposta.status,
                 payload: carga,
             });
@@ -145,14 +179,14 @@ export async function requisicao(caminho, { metodo = 'GET', cabecalhos = {}, cor
         return extrairCargaApi(carga);
     } catch (erro) {
         if (erro?.name === 'AbortError') {
-            throw new ApiError('Tempo limite da requisicao excedido.', { status: 408 });
+            throw new ApiError('Tempo limite da requisição excedido.', { status: 408 });
         }
 
         if (erro instanceof ApiError) {
             throw erro;
         }
 
-        throw new ApiError(erro?.message || 'Falha de comunicacao com o servidor.');
+        throw new ApiError(erro?.message || 'Falha de comunicação com o servidor.');
     } finally {
         clearTimeout(idTempoLimite);
     }
