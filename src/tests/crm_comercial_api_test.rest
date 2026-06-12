@@ -1,0 +1,121 @@
+# CRM comercial (Kanban) — /crm
+# Pré-requisito: @token com módulo vendas (testeAutenticacao.rest)
+
+@url_base = http://localhost:3000/crm
+@token = 
+@admin_token = 
+@id_do_card = 21
+@vendedor_id = 2
+@lead_id = 1
+
+### Listar todos os cards
+GET {{url_base}}/
+Accept: application/json
+Authorization: Bearer {{token}}
+
+### Listar cards por vendedor
+GET {{url_base}}/?vendedor_id={{vendedor_id}}
+Accept: application/json
+Authorization: Bearer {{token}}
+
+### Criar card no CRM
+POST {{url_base}}/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "lead_id": {{lead_id}},
+  "vendedor_id": 1,
+  "etapa_kanban": "Lead",
+  "valor_estimado": 5500.00,
+  "prioridade": 2,
+  "observacoes_venda": "Cliente interessado em automação residencial."
+}
+
+### Criar card sem lead_id (erro esperado)
+POST {{url_base}}/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "vendedor_id": 1,
+  "etapa_kanban": "Contato"
+}
+
+### Atualizar card
+PUT {{url_base}}/{{id_do_card}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "etapa_kanban": "Orcamento",
+  "valor_estimado": 6000.00,
+  "vendedor_id": 1
+}
+
+### Mover etapa do card
+PATCH {{url_base}}/{{id_do_card}}/etapa
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "etapa_kanban": "Contato"
+}
+
+### Anexar proposta/orçamento
+PATCH {{url_base}}/{{id_do_card}}/proposta
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "proposta_url": "https://exemplo.com/propostas/proposta-001.pdf"
+}
+
+### Marcar proposta enviada
+PATCH {{url_base}}/{{id_do_card}}/proposta-enviada
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{}
+
+### Finalizar venda como GANHA
+PATCH {{url_base}}/{{id_do_card}}/ganho
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "numero_pedido": "PED-2026-001",
+  "tipo_pedido": "Normal"
+}
+
+### Ganho com pedido duplicado (erro esperado)
+PATCH {{url_base}}/99/ganho
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "numero_pedido": "PED-2026-001"
+}
+
+### Marcar como PERDIDO
+PATCH {{url_base}}/{{id_do_card}}/perdido
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "motivo_perda": "Cliente achou o valor acima do orçamento atual."
+}
+
+### Perdido sem motivo (erro esperado)
+PATCH {{url_base}}/{{id_do_card}}/perdido
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "motivo_perda": ""
+}
+
+### Deletar card
+DELETE {{url_base}}/{{id_do_card}}
+Accept: application/json
+Authorization: Bearer {{token}}

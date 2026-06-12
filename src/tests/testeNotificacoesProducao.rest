@@ -1,0 +1,35 @@
+# Notificações produção — /notificacoes-producao
+# Pré-requisito: @token com módulo produção
+
+@url_base = http://localhost:3000
+@token =
+@funcionario_id = 4
+@notificacao_id = 1
+
+### Health check
+GET {{url_base}}/notificacoes-producao/health
+
+### Processar atrasos de produção
+POST {{url_base}}/notificacoes-producao/processar-atrasos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "dias_limite": 2
+}
+
+### Listar notificações do funcionário
+GET {{url_base}}/notificacoes-producao/{{funcionario_id}}
+Authorization: Bearer {{token}}
+
+### Marcar notificação como lida
+PATCH {{url_base}}/notificacoes-producao/ler/{{notificacao_id}}
+Authorization: Bearer {{token}}
+
+### Marcar todas como lidas
+PATCH {{url_base}}/notificacoes-producao/ler-tudo/{{funcionario_id}}
+Authorization: Bearer {{token}}
+
+### Excluir notificação
+DELETE {{url_base}}/notificacoes-producao/{{notificacao_id}}
+Authorization: Bearer {{token}}

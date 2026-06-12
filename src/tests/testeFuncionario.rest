@@ -1,0 +1,81 @@
+# Funcionários e permissões — /funcionarios, /permissoes
+# Pré-requisito: login em testeAutenticacao.rest (@admin_token e @token)
+
+@url_base = http://localhost:3000
+@token = 
+@funcionario_id = 5
+
+# ─── Funcionários (Gerente) ───
+
+### Listar funcionários
+GET {{url_base}}/funcionarios
+Authorization: Bearer {{admin_token}}
+
+### Aprovar usuário pendente (gerar permissões por cargo)
+POST {{url_base}}/permissoes/{{funcionario_id}}/gerar-por-cargo
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "cargo": "Vendedor"
+}
+
+### Editar funcionário
+PUT {{url_base}}/funcionarios/{{funcionario_id}}
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "cargo": "Vendedor",
+  "departamento": "Comercial",
+  "status_ativo": true
+}
+
+### Editar funcionário Financeiro
+PUT {{url_base}}/funcionarios/{{funcionario_id}}
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "cargo": "Financeiro",
+  "departamento": "Financeiro",
+  "status_ativo": true
+}
+
+### Excluir funcionário (cuidado — irreversível)
+# DELETE {{url_base}}/funcionarios/{{funcionario_id}}
+# Authorization: Bearer {{admin_token}}
+
+# ─── Permissões ───
+
+### Obter permissões do funcionário
+GET {{url_base}}/permissoes/{{funcionario_id}}
+Authorization: Bearer {{token}}
+
+### Atualizar permissões manualmente (Gerente)
+PUT {{url_base}}/permissoes/{{funcionario_id}}
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "modulo_vendas": 1,
+  "modulo_financeiro": 0,
+  "modulo_producao": 0,
+  "modulo_arquitetura": 0,
+  "pode_editar": 1,
+  "pode_deletar": 0
+}
+
+### Atualizar permissões manualmente (Financeiro)
+PUT {{url_base}}/permissoes/{{funcionario_id}}
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "modulo_vendas": 0,
+  "modulo_financeiro": 1,
+  "modulo_producao": 0,
+  "modulo_arquitetura": 0,
+  "pode_editar": 1,
+  "pode_deletar": 0
+}

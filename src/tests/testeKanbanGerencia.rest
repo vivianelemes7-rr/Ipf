@@ -1,0 +1,104 @@
+# Kanban Gerencia — /gerencia/kanban
+# Pré-requisito: @token com cargo Gerente ou Administrador
+
+@url_base = http://localhost:3000
+@token =
+@card_id = 1
+
+### Listar Kanban Gerencial com resumos dos setores
+GET {{url_base}}/gerencia/kanban
+Authorization: Bearer {{token}}
+
+### Criar card gerencial
+POST {{url_base}}/gerencia/kanban/cards
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "titulo": "Revisao de custos operacionais",
+  "detalhes": ["Setor: Operacoes", "Objetivo: reduzir gargalos"],
+  "observacoes_gerenciais": "Avaliar impacto em Vendas, Financeiro e Producao.",
+  "setor_origem": "Gerencia",
+  "tipo_card": "Prioridade",
+  "prioridade": "Alta",
+  "responsavel_gerencia_id": null
+}
+
+### Buscar card gerencial
+GET {{url_base}}/gerencia/kanban/cards/{{card_id}}
+Authorization: Bearer {{token}}
+
+### Atualizar card gerencial
+PATCH {{url_base}}/gerencia/kanban/cards/{{card_id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "titulo": "Revisao de custos atualizada",
+  "detalhes": ["Setor: Operacoes", "Status: em analise"],
+  "observacoes_gerenciais": "Ajustar plano e revisar indicadores.",
+  "setor_origem": "Financeiro",
+  "tipo_card": "Decisao",
+  "prioridade": "Urgente"
+}
+
+### Mover card para Em Andamento
+PATCH {{url_base}}/gerencia/kanban/cards/{{card_id}}/etapa
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "etapa_kanban": "Em Andamento"
+}
+
+### Mover card para Revisao
+PATCH {{url_base}}/gerencia/kanban/cards/{{card_id}}/etapa
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "etapa_kanban": "Revisao"
+}
+
+### Mover card para Aprovado
+PATCH {{url_base}}/gerencia/kanban/cards/{{card_id}}/etapa
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "etapa_kanban": "Aprovado"
+}
+
+### Etapa invalida (erro esperado 400)
+PATCH {{url_base}}/gerencia/kanban/cards/{{card_id}}/etapa
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "etapa_kanban": "Concluido"
+}
+
+### Setor invalido (erro esperado 400)
+PATCH {{url_base}}/gerencia/kanban/cards/{{card_id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "setor_origem": "Suporte"
+}
+
+### Tipo de card invalido (erro esperado 400)
+PATCH {{url_base}}/gerencia/kanban/cards/{{card_id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tipo_card": "Outro"
+}
+
+### Sem token (erro esperado 401)
+GET {{url_base}}/gerencia/kanban
+
+### Deletar card gerencial
+DELETE {{url_base}}/gerencia/kanban/cards/{{card_id}}
+Authorization: Bearer {{token}}

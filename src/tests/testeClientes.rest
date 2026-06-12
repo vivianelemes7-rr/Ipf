@@ -1,0 +1,63 @@
+# Clientes — /clientes
+# Pré-requisito: @token com módulo vendas ou cargo Gerente
+
+@url_base = http://localhost:3000
+@token =
+@cliente_id = 1
+
+### Listar clientes
+GET {{url_base}}/clientes
+Authorization: Bearer {{token}}
+
+### Listar clientes por estado
+GET {{url_base}}/clientes?estado=SP
+Authorization: Bearer {{token}}
+
+### Buscar cliente por ID
+GET {{url_base}}/clientes/{{cliente_id}}
+Authorization: Bearer {{token}}
+
+### Criar cliente
+POST {{url_base}}/clientes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome_contato": "João Silva",
+  "empresa": "Empresa Alpha Ltda",
+  "cpf_cnpj": "00.000.000/0001-00",
+  "telefone": "11999999999",
+  "email": "cliente@email.com",
+  "endereco_completo": "Rua Exemplo, 123",
+  "cidade": "São Paulo",
+  "estado": "SP",
+  "origem": "Cadastro Manual"
+}
+
+### Atualizar cliente
+PUT {{url_base}}/clientes/{{cliente_id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "telefone": "11988888888",
+  "cidade": "Campinas",
+  "estado": "SP"
+}
+
+### Converter lead em cliente
+PATCH {{url_base}}/clientes/{{cliente_id}}/converter
+Authorization: Bearer {{token}}
+
+### Arquivar cliente
+PATCH {{url_base}}/clientes/{{cliente_id}}/arquivar
+Authorization: Bearer {{token}}
+
+### Criar cliente sem contato (erro esperado 400)
+POST {{url_base}}/clientes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome_contato": "Cliente sem contato"
+}

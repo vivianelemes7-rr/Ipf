@@ -1,0 +1,31 @@
+# Notificações gerência — /notificacoes-gerencia
+# Pré-requisito: @token com cargo Gerente ou Administrador
+
+@url_base = http://localhost:3000
+@token =
+@funcionario_id = 1
+@notificacao_id = 1
+
+### Health check
+GET {{url_base}}/notificacoes-gerencia/health
+Authorization: Bearer {{token}}
+
+### Processar alertas críticos
+POST {{url_base}}/notificacoes-gerencia/processar-alertas
+Authorization: Bearer {{token}}
+
+### Listar notificações do gestor
+GET {{url_base}}/notificacoes-gerencia/{{funcionario_id}}
+Authorization: Bearer {{token}}
+
+### Marcar notificação como lida
+PATCH {{url_base}}/notificacoes-gerencia/ler/{{notificacao_id}}
+Authorization: Bearer {{token}}
+
+### Marcar todas como lidas
+PATCH {{url_base}}/notificacoes-gerencia/ler-tudo/{{funcionario_id}}
+Authorization: Bearer {{token}}
+
+### Excluir notificação
+DELETE {{url_base}}/notificacoes-gerencia/{{notificacao_id}}
+Authorization: Bearer {{token}}

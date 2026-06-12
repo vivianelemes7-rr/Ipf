@@ -1,0 +1,31 @@
+# Leads — /leads
+# Pré-requisito: @token com módulo vendas (login em testeAutenticacao.rest)
+
+@url_base = http://localhost:3000
+@token =
+
+### Listar leads
+GET {{url_base}}/leads
+Authorization: Bearer {{token}}
+
+### Cadastrar lead
+POST {{url_base}}/leads/cadastrar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome_contato": "Cliente REST",
+  "telefone": "11988887777",
+  "email": "cliente.rest@ipf.com",
+  "cidade": "São Paulo",
+  "estado": "SP"
+}
+
+### Cadastrar lead sem contato (erro esperado 400)
+POST {{url_base}}/leads/cadastrar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome_contato": "Sem Telefone"
+}
