@@ -1,46 +1,65 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Vendas.css';
 import { sair } from './services/authService';
-
-const CLIENTES_MOCK = [
-    { id: 1, nome: 'Empresa Alpha Ltda', desde: '2018-03-10', pedidos: 142, valorTotal: 98500 },
-    { id: 2, nome: 'Comércio Beta S/A', desde: '2019-07-22', pedidos: 87, valorTotal: 61200 },
-    { id: 3, nome: 'Indústrias Gama', desde: '2020-01-15', pedidos: 53, valorTotal: 37800 },
-    { id: 4, nome: 'Distribuidora Delta', desde: '2021-05-08', pedidos: 34, valorTotal: 22100 },
-    { id: 5, nome: 'Loja Épsilon ME', desde: '2022-09-30', pedidos: 18, valorTotal: 11400 },
-    { id: 6, nome: 'Serviços Zeta', desde: '2023-02-14', pedidos: 9, valorTotal: 5600 },
-    { id: 7, nome: 'Grupo Eta Corp', desde: '2018-11-01', pedidos: 210, valorTotal: 175000 },
-    { id: 8, nome: 'Theta Atacado', desde: '2019-04-20', pedidos: 76, valorTotal: 52300 },
-    { id: 9, nome: 'Iota Varejo', desde: '2023-08-05', pedidos: 5, valorTotal: 2900 },
-    { id: 10, nome: 'Kappa Soluções', desde: '2020-12-11', pedidos: 41, valorTotal: 28700 },
-];
-
-const PEDIDOS_MOCK = [
-    { id: 1001, clienteId: 1, data: '2026-04-15', valor: 4800, status: 'Entregue' },
-    { id: 1002, clienteId: 7, data: '2026-04-16', valor: 12300, status: 'Em andamento' },
-    { id: 1003, clienteId: 3, data: '2026-04-16', valor: 2100, status: 'Pendente' },
-    { id: 1004, clienteId: 2, data: '2026-04-17', valor: 7500, status: 'Entregue' },
-    { id: 1005, clienteId: 5, data: '2026-04-17', valor: 980, status: 'Cancelado' },
-    { id: 1006, clienteId: 8, data: '2026-04-18', valor: 3300, status: 'Em andamento' },
-    { id: 1007, clienteId: 4, data: '2026-04-18', valor: 1750, status: 'Pendente' },
-    { id: 1008, clienteId: 1, data: '2026-04-18', valor: 6200, status: 'Em andamento' },
-];
+import { requisicao } from './services/httpClient';
+import { API_ENDPOINTS } from './config/apiContract';
 
 const STATUS_COR = {
     'Entregue': '#28a745',
+    'Finalizado': '#28a745',
+    'Finalizado/Entregue': '#28a745',
     'Em andamento': '#007bff',
+    'Em Processamento': '#007bff',
+    'Arquitetura': '#6f42c1',
+    'Producao': '#17a2b8',
+    'Produção': '#17a2b8',
     'Pendente': '#ffc107',
     'Cancelado': '#dc3545',
 };
 
+function normalizarCliente(cliente) {
+    return {
+        id: cliente.id,
+        nome: cliente.empresa || cliente.nome_contato || 'Cliente sem nome',
+        desde: cliente.data_cadastro,
+        pedidos: Number(cliente.total_pedidos || 0),
+        valorTotal: Number(cliente.valor_total_comprado || 0),
+    };
+}
+
+function normalizarPedido(pedido) {
+    return {
+        id: pedido.numero_pedido || pedido.id,
+        idInterno: pedido.id,
+        clienteId: pedido.lead_id,
+        clienteNome: pedido.cliente_nome || pedido.empresa || pedido.cliente_contato || '—',
+        data: pedido.data_pedido,
+        valor: Number(pedido.valor_total_fechado || 0),
+        status: pedido.status_pedido || 'Sem status',
+    };
+}
+
+function formatarData(data) {
+    if (!data) return '—';
+
+    const dataFormatada = new Date(data);
+
+    if (Number.isNaN(dataFormatada.getTime())) {
+        return '—';
+    }
+
+    return dataFormatada.toLocaleDateString('pt-BR');
+}
+
 function calcularNivelCliente(cliente) {
     const agora = new Date();
-    const desde = new Date(cliente.desde);
+    const desde = cliente.desde ? new Date(cliente.desde) : agora;
+
     const meses = (agora.getFullYear() - desde.getFullYear()) * 12 + (agora.getMonth() - desde.getMonth());
-    // Score: meses de relacionamento (peso 60%) + pedidos (peso 40%), normalizado
-    const scoreSenioridade = Math.min(meses / 96, 1); // máx ~8 anos
-    const scorePedidos = Math.min(cliente.pedidos / 200, 1); // máx 200 pedidos
+
+    const scoreSenioridade = Math.min(meses / 96, 1);
+    const scorePedidos = Math.min(cliente.pedidos / 200, 1);
     const score = scoreSenioridade * 0.6 + scorePedidos * 0.4;
 
     if (score >= 0.75) return 'Diamante';
@@ -56,23 +75,61 @@ const NIVEL_CONFIG = {
     Bronze: { cor: '#bf8650', fundo: '#fbe9e7', icone: '🥉' },
 };
 
-const clientesComNivel = CLIENTES_MOCK.map(c => ({ ...c, nivel: calcularNivelCliente(c) }))
-    .sort((a, b) => new Date(a.desde) - new Date(b.desde));
-
 export default function Vendas() {
     const navegar = useNavigate();
     const [filtroNivel, setFiltroNivel] = useState('Todos');
     const [abaSelecionada, setAbaSelecionada] = useState('clientes');
+    const [clientes, setClientes] = useState([]);
+    const [pedidos, setPedidos] = useState([]);
+    const [carregando, setCarregando] = useState(true);
+    const [erro, setErro] = useState('');
+
+    useEffect(() => {
+        async function carregarDados() {
+            try {
+                setCarregando(true);
+                setErro('');
+
+                const [clientesApi, pedidosApi] = await Promise.all([
+                    requisicao(API_ENDPOINTS.clientes.listar),
+                    requisicao(API_ENDPOINTS.pedidos.listar),
+                ]);
+
+                setClientes(Array.isArray(clientesApi) ? clientesApi.map(normalizarCliente) : []);
+                setPedidos(Array.isArray(pedidosApi) ? pedidosApi.map(normalizarPedido) : []);
+            } catch (error) {
+                console.error('Erro ao carregar dados de vendas:', error);
+                setErro(error.message || 'Erro ao carregar dados de vendas.');
+            } finally {
+                setCarregando(false);
+            }
+        }
+
+        carregarDados();
+    }, []);
+
+    const clientesComNivel = useMemo(() => (
+        clientes
+            .map(c => ({ ...c, nivel: calcularNivelCliente(c) }))
+            .sort((a, b) => new Date(a.desde || 0) - new Date(b.desde || 0))
+    ), [clientes]);
 
     const clientesFiltrados = filtroNivel === 'Todos'
         ? clientesComNivel
         : clientesComNivel.filter(c => c.nivel === filtroNivel);
 
-    const totalVendas = PEDIDOS_MOCK.filter(p => p.status !== 'Cancelado').reduce((s, p) => s + p.valor, 0);
-    const totalPedidos = PEDIDOS_MOCK.length;
-    const pedidosEntregues = PEDIDOS_MOCK.filter(p => p.status === 'Entregue').length;
+    const totalVendas = pedidos
+        .filter(p => p.status !== 'Cancelado')
+        .reduce((s, p) => s + p.valor, 0);
 
-    const clienteNome = (id) => CLIENTES_MOCK.find(c => c.id === id)?.nome || '—';
+    const totalPedidos = pedidos.length;
+
+    const pedidosEntregues = pedidos.filter(p =>
+        ['Entregue', 'Finalizado', 'Finalizado/Entregue'].includes(p.status)
+    ).length;
+
+    const clienteNome = (pedido) =>
+        pedido.clienteNome || clientes.find(c => c.id === pedido.clienteId)?.nome || '—';
 
     return (
         <div className="vendas-page">
@@ -108,7 +165,7 @@ export default function Vendas() {
                 {/* KPIs */}
                 <div className="vendas-kpis">
                     {[
-                        { label: 'Total de Clientes', valor: CLIENTES_MOCK.length, icone: '👥', cor: '#3f51b5' },
+                        { label: 'Total de Clientes', valor: clientes.length, icone: '👥', cor: '#3f51b5' },
                         { label: 'Total de Pedidos', valor: totalPedidos, icone: '📦', cor: '#009688' },
                         { label: 'Pedidos Entregues', valor: pedidosEntregues, icone: '✅', cor: '#43a047' },
                         { label: 'Faturamento (mês)', valor: `R$ ${totalVendas.toLocaleString('pt-BR')}`, icone: '💰', cor: '#f9a825' },
@@ -120,6 +177,18 @@ export default function Vendas() {
                         </div>
                     ))}
                 </div>
+
+                {carregando && (
+                    <div className="vendas-legenda">
+                        Carregando dados reais de clientes e pedidos...
+                    </div>
+                )}
+
+                {erro && (
+                    <div className="vendas-legenda" style={{ color: '#dc3545' }}>
+                        {erro}
+                    </div>
+                )}
 
                 {/* Abas */}
                 <div className="vendas-abas">
@@ -192,7 +261,7 @@ export default function Vendas() {
                                         return (
                                             <tr key={c.id}>
                                                 <td className="vendas-td-nome">{c.nome}</td>
-                                                <td className="vendas-td-data">{new Date(c.desde).toLocaleDateString('pt-BR')}</td>
+                                                <td className="vendas-td-data">{formatarData(c.desde)}</td>
                                                 <td className="vendas-td-pedidos">{c.pedidos}</td>
                                                 <td className="vendas-td-valor">R$ {c.valorTotal.toLocaleString('pt-BR')}</td>
                                                 <td>
@@ -206,8 +275,8 @@ export default function Vendas() {
                                             </tr>
                                         );
                                     })}
-                                    {clientesFiltrados.length === 0 && (
-                                        <tr><td colSpan={5} className="vendas-table-empty">Nenhum cliente neste nível.</td></tr>
+                                    {clientesFiltrados.length === 0 && !carregando && (
+                                        <tr><td colSpan={5} className="vendas-table-empty">Nenhum cliente encontrado.</td></tr>
                                     )}
                                 </tbody>
                             </table>
@@ -227,26 +296,33 @@ export default function Vendas() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {PEDIDOS_MOCK.map((p) => (
-                                    <tr key={p.id}>
-                                        <td className="vendas-td-numero">#{p.id}</td>
-                                        <td className="vendas-td-cliente">{clienteNome(p.clienteId)}</td>
-                                        <td className="vendas-td-data">{new Date(p.data).toLocaleDateString('pt-BR')}</td>
-                                        <td className="vendas-td-valor">R$ {p.valor.toLocaleString('pt-BR')}</td>
-                                        <td>
-                                            <span
-                                                className="vendas-status-badge"
-                                                style={{
-                                                    background: STATUS_COR[p.status] + '22',
-                                                    color: STATUS_COR[p.status],
-                                                    border: `1px solid ${STATUS_COR[p.status]}55`,
-                                                }}
-                                            >
-                                                {p.status}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
+                                {pedidos.map((p) => {
+                                    const corStatus = STATUS_COR[p.status] || '#6c757d';
+
+                                    return (
+                                        <tr key={p.idInterno || p.id}>
+                                            <td className="vendas-td-numero">#{p.id}</td>
+                                            <td className="vendas-td-cliente">{clienteNome(p)}</td>
+                                            <td className="vendas-td-data">{formatarData(p.data)}</td>
+                                            <td className="vendas-td-valor">R$ {p.valor.toLocaleString('pt-BR')}</td>
+                                            <td>
+                                                <span
+                                                    className="vendas-status-badge"
+                                                    style={{
+                                                        background: `${corStatus}22`,
+                                                        color: corStatus,
+                                                        border: `1px solid ${corStatus}55`,
+                                                    }}
+                                                >
+                                                    {p.status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                                {pedidos.length === 0 && !carregando && (
+                                    <tr><td colSpan={5} className="vendas-table-empty">Nenhum pedido encontrado.</td></tr>
+                                )}
                             </tbody>
                         </table>
                     </div>

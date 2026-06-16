@@ -1,32 +1,68 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-    MDBInput,
-    MDBIcon,
-    MDBModal,
-    MDBModalDialog,
-    MDBModalContent,
-    MDBModalHeader,
-    MDBModalBody,
-    MDBModalFooter,
-} from 'mdb-react-ui-kit';
 import './EsquecerSenha.css';
-import { sair } from './services/authService';
+import { requisicao } from './services/httpClient';
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const EsquecerSenha = () => {
     const navegar = useNavigate();
-    const [email, definirEmail] = useState('');
-    const [mostrarModal, definirMostrarModal] = useState(false);
 
-    const aoEnviar = (e) => {
-        e.preventDefault();
-        if (email.trim()) {
-            definirMostrarModal(true);
+    const [email, definirEmail] = useState('');
+    const [erro, definirErro] = useState('');
+    const [retorno, definirRetorno] = useState('');
+    const [enviando, definirEnviando] = useState(false);
+
+    const validarEmail = () => {
+        const emailNormalizado = email.trim();
+
+        if (!emailNormalizado) {
+            return 'Informe o e-mail cadastrado.';
+        }
+
+        if (!EMAIL_REGEX.test(emailNormalizado)) {
+            return 'Informe um e-mail válido.';
+        }
+
+        return '';
+    };
+
+    const aoEnviar = async (evento) => {
+        evento.preventDefault();
+
+        definirErro('');
+        definirRetorno('');
+
+        const erroValidacao = validarEmail();
+
+        if (erroValidacao) {
+            definirErro(erroValidacao);
+            return;
+        }
+
+        definirEnviando(true);
+
+        try {
+            const resposta = await requisicao('/auth/esquecer-senha', {
+                metodo: 'POST',
+                corpo: {
+                    email: email.trim().toLowerCase(),
+                },
+            });
+
+            definirRetorno(
+                resposta?.mensagem ||
+                'Se o e-mail estiver cadastrado, você receberá instruções para redefinir sua senha.'
+            );
+        } catch (erroRequisicao) {
+            console.error('Erro ao solicitar redefinição de senha:', erroRequisicao);
+            definirErro(erroRequisicao.message || 'Não foi possível solicitar a redefinição de senha.');
+        } finally {
+            definirEnviando(false);
         }
     };
 
     const aoIrLogin = () => {
-        definirMostrarModal(false);
         navegar('/', { replace: true });
     };
 
@@ -35,62 +71,57 @@ const EsquecerSenha = () => {
             <div className="forgot-container">
                 <div className="animate-fade-in">
                     <h4 className="title">Recuperar Senha</h4>
-                    <p className="subtitle">Insira seu e-mail para receber as instruções.</p>
+                    <p className="subtitle">
+                        Insira seu e-mail para receber as instruções.
+                    </p>
+
+                    {erro && (
+                        <div className="alert alert-danger" role="alert">
+                            {erro}
+                        </div>
+                    )}
+
+                    {retorno && (
+                        <div className="alert alert-success" role="status">
+                            {retorno}
+                        </div>
+                    )}
 
                     <form onSubmit={aoEnviar}>
-                        <MDBInput className='input'
-                            wrapperClass="mb-4"
-                            label="E-mail cadastrado"
-                            type="email"
-                            size="lg"
-                            value={email}
-                            onChange={(e) => definirEmail(e.target.value)}
-                            required
-                        />
+                        <div className="input-wrapper mb-4">
+                            <label htmlFor="email" className="form-label">
+                                E-mail cadastrado
+                            </label>
+                            <input
+                                id="email"
+                                type="email"
+                                className="form-control"
+                                value={email}
+                                onChange={(evento) => definirEmail(evento.target.value)}
+                                required
+                            />
+                        </div>
 
-                        <button className="btn-recovery" type="submit">
-                            Enviar Link de Redefinição
+                        <button
+                            className="btn-recovery"
+                            type="submit"
+                            disabled={enviando}
+                        >
+                            {enviando ? 'Enviando...' : 'Enviar Link de Redefinição'}
                         </button>
                     </form>
 
                     <div className="text-center">
-                        <button type="button" className="back-link" onClick={aoIrLogin}>
-                            <MDBIcon fas icon="arrow-left" className="me-2" />
-                            Voltar para o Login
+                        <button
+                            type="button"
+                            className="back-link"
+                            onClick={aoIrLogin}
+                        >
+                            ← Voltar para o Login
                         </button>
                     </div>
 
-                    <MDBModal show={mostrarModal} setShow={definirMostrarModal} tabIndex='-1'>
-                        <MDBModalDialog centered>
-                            <MDBModalContent style={{ borderRadius: '16px', border: 'none' }}>
-                                <MDBModalHeader className='border-0 justify-content-center pt-4'>
-                                    <div className='success-icon-wrapper'>
-                                        <MDBIcon fas icon='paper-plane' size='2x' style={{ color: '#00bcd4' }} />
-                                    </div>
-                                </MDBModalHeader>
-                                <MDBModalBody className='text-center px-4 pb-4'>
-                                    <h5 className='fw-bold mb-3' style={{ color: '#0f172a' }}>
-                                        E-mail enviado!
-                                    </h5>
-                                    <p className='text-muted small'>
-                                        Verifique a caixa de entrada de <strong>{email}</strong> e siga as instruções para redefinir sua senha.
-                                    </p>
-                                </MDBModalBody>
-                                <MDBModalFooter className='border-0 p-3'>
-                                    <button
-                                        className='btn-recovery'
-                                        type='button'
-                                        onClick={aoIrLogin}
-                                        style={{ backgroundColor: '#0f172a', borderRadius: '8px', fontWeight: '600' }}
-                                    >
-                                        Ok, voltar
-                                    </button>
-                                </MDBModalFooter>
-                            </MDBModalContent>
-                        </MDBModalDialog>
-                    </MDBModal>
-
-                    <div className='footer-copy'>
+                    <div className="footer-copy">
                         IPF Sistemas
                     </div>
                 </div>

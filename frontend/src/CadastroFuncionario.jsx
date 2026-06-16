@@ -1,72 +1,101 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { sair } from './services/authService';
-import { excluirFuncionario, listarFuncionarios, salvarFuncionario } from './services/funcionarioService';
-import { obterPapelUsuarioAtual } from './services/sessionService';
+import { requisicao } from './services/httpClient';
 
 const FORMULARIO_INICIAL = {
-    id: '',
     nome: '',
     email: '',
     senha: '',
-    papel: 'vendedor',
 };
 
 export default function Cadastro() {
     const navegar = useNavigate();
-    const papelUsuario = obterPapelUsuarioAtual();
-    const podeGerenciar = useMemo(
-        () => papelUsuario === 'administrador' || papelUsuario === 'gerente',
-        [papelUsuario]
-    );
+
     const [dadosFormulario, definirDadosFormulario] = useState(FORMULARIO_INICIAL);
     const [confirmarSenha, definirConfirmarSenha] = useState('');
     const [retorno, definirRetorno] = useState('');
-    const [funcionarios, definirFuncionarios] = useState(() => listarFuncionarios());
+    const [erro, definirErro] = useState('');
+    const [salvando, definirSalvando] = useState(false);
 
     const aoAlterar = (event) => {
         const { name, value } = event.target;
-        definirDadosFormulario((anterior) => ({ ...anterior, [name]: value }));
+
+        definirDadosFormulario((anterior) => ({
+            ...anterior,
+            [name]: value,
+        }));
     };
 
-    const aoEnviar = (event) => {
+    const validarFormulario = () => {
+        const nome = dadosFormulario.nome.trim();
+        const email = dadosFormulario.email.trim();
+        const senha = dadosFormulario.senha.trim();
+
+        if (!nome) {
+            return 'Informe seu nome completo.';
+        }
+
+        if (!email) {
+            return 'Informe seu e-mail.';
+        }
+
+        if (!/\S+@\S+\.\S+/.test(email)) {
+            return 'Informe um e-mail válido.';
+        }
+
+        if (!senha) {
+            return 'Informe uma senha.';
+        }
+
+        if (senha.length < 6) {
+            return 'A senha deve ter no mínimo 6 caracteres.';
+        }
+
+        if (senha !== confirmarSenha) {
+            return 'As senhas não coincidem.';
+        }
+
+        return '';
+    };
+
+    const aoEnviar = async (event) => {
         event.preventDefault();
-        if (!podeGerenciar) {
-            definirRetorno('Apenas ADM e Gerente podem cadastrar perfis.');
+
+        definirErro('');
+        definirRetorno('');
+
+        const erroValidacao = validarFormulario();
+
+        if (erroValidacao) {
+            definirErro(erroValidacao);
             return;
         }
 
-        if (dadosFormulario.senha !== confirmarSenha) {
-            alert('As senhas não coincidem.');
-            return;
-        }
+        definirSalvando(true);
 
         try {
-            salvarFuncionario(dadosFormulario);
-            definirFuncionarios(listarFuncionarios());
-            definirRetorno('Funcionario salvo com sucesso.');
+            const resposta = await requisicao('/auth/cadastrar', {
+                metodo: 'POST',
+                corpo: {
+                    nome: dadosFormulario.nome.trim(),
+                    email: dadosFormulario.email.trim().toLowerCase(),
+                    senha: dadosFormulario.senha.trim(),
+                },
+            });
+
+            definirRetorno(
+                resposta?.mensagem ||
+                'Cadastro solicitado com sucesso. Aguarde aprovação de um administrador.'
+            );
+
             definirDadosFormulario(FORMULARIO_INICIAL);
             definirConfirmarSenha('');
-        } catch (erro) {
-            definirRetorno(erro.message || 'Nao foi possivel salvar o funcionario.');
+        } catch (erroRequisicao) {
+            console.error('Erro ao solicitar cadastro:', erroRequisicao);
+            definirErro(erroRequisicao.message || 'Não foi possível solicitar o cadastro.');
+        } finally {
+            definirSalvando(false);
         }
-    };
-
-    const aoEditar = (funcionario) => {
-        definirDadosFormulario({
-            id: funcionario.id,
-            nome: funcionario.nome,
-            email: funcionario.email,
-            senha: funcionario.senha,
-            papel: funcionario.papel,
-        });
-        definirConfirmarSenha(funcionario.senha || '');
-    };
-
-    const aoExcluir = (email) => {
-        if (!window.confirm(`Deseja excluir o funcionario ${email}?`)) return;
-        excluirFuncionario(email);
-        definirFuncionarios(listarFuncionarios());
     };
 
     return (
@@ -75,10 +104,33 @@ export default function Cadastro() {
                 <div className="col-md-7 col-lg-6">
                     <div className="card shadow-sm">
                         <div className="card-body p-4">
-                            <h2 className="card-title text-center mb-4">Cadastro de Usuário</h2>
+                            <h2 className="card-title text-center mb-4">
+                                Solicitar cadastro
+                            </h2>
+
+                            <p className="text-muted text-center">
+                                Preencha seus dados para solicitar acesso ao sistema.
+                                O cadastro ficará pendente até aprovação de um administrador.
+                            </p>
+
+                            {erro && (
+                                <div className="alert alert-danger" role="alert">
+                                    {erro}
+                                </div>
+                            )}
+
+                            {retorno && (
+                                <div className="alert alert-success" role="status">
+                                    {retorno}
+                                </div>
+                            )}
+
                             <form onSubmit={aoEnviar}>
                                 <div className="mb-3">
-                                    <label htmlFor="nome" className="form-label">Nome completo</label>
+                                    <label htmlFor="nome" className="form-label">
+                                        Nome completo
+                                    </label>
+
                                     <input
                                         id="nome"
                                         name="nome"
@@ -91,7 +143,10 @@ export default function Cadastro() {
                                 </div>
 
                                 <div className="mb-3">
-                                    <label htmlFor="email" className="form-label">E-mail</label>
+                                    <label htmlFor="email" className="form-label">
+                                        E-mail
+                                    </label>
+
                                     <input
                                         id="email"
                                         name="email"
@@ -104,27 +159,10 @@ export default function Cadastro() {
                                 </div>
 
                                 <div className="mb-3">
-                                    <label htmlFor="papel" className="form-label">Perfil</label>
-                                    <select
-                                        id="papel"
-                                        name="papel"
-                                        className="form-select"
-                                        value={dadosFormulario.papel}
-                                        onChange={aoAlterar}
-                                        required
-                                    >
-                                        <option value="vendedor">Vendedor</option>
-                                        <option value="administrador">Administrador</option>
-                                        <option value="arquitetura">Arquitetura</option>
-                                        <option value="financeiro">Financeiro</option>
-                                        <option value="producao">Producao</option>
-                                        <option value="logistica">Logistica</option>
-                                        <option value="gerente">Gerente</option>
-                                    </select>
-                                </div>
+                                    <label htmlFor="senha" className="form-label">
+                                        Senha
+                                    </label>
 
-                                <div className="mb-3">
-                                    <label htmlFor="senha" className="form-label">Senha</label>
                                     <input
                                         id="senha"
                                         name="senha"
@@ -138,9 +176,13 @@ export default function Cadastro() {
                                 </div>
 
                                 <div className="mb-4">
-                                    <label htmlFor="confirmarSenha" className="form-label">Confirmar senha</label>
+                                    <label htmlFor="confirmarSenha" className="form-label">
+                                        Confirmar senha
+                                    </label>
+
                                     <input
                                         id="confirmarSenha"
+                                        name="confirmarSenha"
                                         type="password"
                                         className="form-control"
                                         value={confirmarSenha}
@@ -150,62 +192,29 @@ export default function Cadastro() {
                                     />
                                 </div>
 
-                                <button type="submit" className="btn btn-primary w-100 mb-3">
-                                    Cadastrar
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary w-100 mb-3"
+                                    disabled={salvando}
+                                >
+                                    {salvando ? 'Enviando...' : 'Solicitar cadastro'}
                                 </button>
                             </form>
+
                             <div className="text-center">
                                 <Link to="/" className="link-primary">
                                     Voltar ao login
                                 </Link>
                             </div>
 
-                            {retorno && (
-                                <p style={{ marginTop: '12px', marginBottom: 0, color: '#0f5132' }}>{retorno}</p>
-                            )}
-
-                            <hr />
-                            <h5>Funcionarios cadastrados</h5>
-                            <div className="table-responsive">
-                                <table className="table table-sm table-striped align-middle">
-                                    <thead>
-                                        <tr>
-                                            <th>Nome</th>
-                                            <th>E-mail</th>
-                                            <th>Perfil</th>
-                                            <th>Acoes</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {funcionarios.map((funcionario) => (
-                                            <tr key={funcionario.id || funcionario.email}>
-                                                <td>{funcionario.nome}</td>
-                                                <td>{funcionario.email}</td>
-                                                <td>{funcionario.papel}</td>
-                                                <td>
-                                                    <div style={{ display: 'flex', gap: '6px' }}>
-                                                        <button
-                                                            type="button"
-                                                            className="btn btn-outline-primary btn-sm"
-                                                            onClick={() => aoEditar(funcionario)}
-                                                            disabled={!podeGerenciar}
-                                                        >
-                                                            Editar
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            className="btn btn-outline-danger btn-sm"
-                                                            onClick={() => aoExcluir(funcionario.email)}
-                                                            disabled={!podeGerenciar}
-                                                        >
-                                                            Excluir
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                            <div className="text-center mt-3">
+                                <button
+                                    type="button"
+                                    className="btn btn-outline-secondary btn-sm"
+                                    onClick={() => navegar('/')}
+                                >
+                                    Ir para login
+                                </button>
                             </div>
                         </div>
                     </div>

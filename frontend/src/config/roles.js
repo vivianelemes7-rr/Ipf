@@ -7,7 +7,7 @@ export const QUADRO_PADRAO_POR_PAPEL = {
     gerente: 'gerente',
     financeiro: 'financeiro',
     logistica: 'logistica',
-    administrador: 'arquitetura',
+    administrador: 'gerente',
 };
 
 export const ACESSO_CARDS_DASHBOARD = {
