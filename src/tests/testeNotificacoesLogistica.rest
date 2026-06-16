@@ -1,0 +1,136 @@
+# Notificações Logística — /notificacoes-logistica
+# Pré-requisito: @token com cargo Logistica, Gerente ou Administrador
+# Obtenha o token em testeAutenticacao.rest
+
+@url_base = http://localhost:3000
+@token =
+@funcionario_id = 1
+@notificacao_id = 1
+
+# ─────────────────────────────────────────────
+# 1. HEALTH CHECK
+# ─────────────────────────────────────────────
+
+### 1. Health check do módulo de notificações de logística
+GET {{url_base}}/notificacoes-logistica/health
+Authorization: Bearer {{token}}
+
+### Health check sem token (erro esperado 401)
+GET {{url_base}}/notificacoes-logistica/health
+
+# ─────────────────────────────────────────────
+# 2. AUTOMAÇÃO — PROCESSAR ATRASOS
+# ─────────────────────────────────────────────
+
+### 2a. Processar atrasos com limite padrão (3 dias)
+# Gera alertas para cards parados em "Pronto para Envio" ou "Em Expedicao"
+# há mais de 3 dias sem movimentação
+POST {{url_base}}/notificacoes-logistica/processar-atrasos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{}
+
+### 2b. Processar atrasos com limite customizado (7 dias)
+POST {{url_base}}/notificacoes-logistica/processar-atrasos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "dias_limite": 7
+}
+
+### 2c. Processar atrasos com limite curto (1 dia — gera muitos alertas)
+POST {{url_base}}/notificacoes-logistica/processar-atrasos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "dias_limite": 1
+}
+
+### 2d. Processar atrasos sem token (erro esperado 401)
+POST {{url_base}}/notificacoes-logistica/processar-atrasos
+Content-Type: application/json
+
+{}
+
+# ─────────────────────────────────────────────
+# 3. LISTAR NOTIFICAÇÕES DO FUNCIONÁRIO
+# ─────────────────────────────────────────────
+
+### 3a. Listar notificações do funcionário (painel completo + contagem não lidas)
+GET {{url_base}}/notificacoes-logistica/{{funcionario_id}}
+Authorization: Bearer {{token}}
+
+### 3b. Listar notificações — funcionário com ID diferente
+GET {{url_base}}/notificacoes-logistica/2
+Authorization: Bearer {{token}}
+
+### 3c. Listar notificações sem token (erro esperado 401)
+GET {{url_base}}/notificacoes-logistica/{{funcionario_id}}
+
+### 3d. Listar notificações — cargo sem permissão (erro esperado 403)
+# Use um token de cargo que não seja Logistica/Gerente/Administrador
+# @token_sem_permissao = <token de vendedor>
+# GET {{url_base}}/notificacoes-logistica/{{funcionario_id}}
+# Authorization: Bearer {{token_sem_permissao}}
+
+# ─────────────────────────────────────────────
+# 4. MARCAR NOTIFICAÇÃO COMO LIDA
+# ─────────────────────────────────────────────
+
+### 4a. Marcar notificação como lida
+PATCH {{url_base}}/notificacoes-logistica/ler/{{notificacao_id}}
+Authorization: Bearer {{token}}
+
+### 4b. Marcar notificação inexistente como lida (erro esperado 404)
+PATCH {{url_base}}/notificacoes-logistica/ler/99999
+Authorization: Bearer {{token}}
+
+### 4c. Marcar como lida sem token (erro esperado 401)
+PATCH {{url_base}}/notificacoes-logistica/ler/{{notificacao_id}}
+
+# ─────────────────────────────────────────────
+# 5. MARCAR TODAS AS NOTIFICAÇÕES COMO LIDAS
+# ─────────────────────────────────────────────
+
+### 5a. Marcar todas as notificações do funcionário como lidas
+PATCH {{url_base}}/notificacoes-logistica/ler-tudo/{{funcionario_id}}
+Authorization: Bearer {{token}}
+
+### 5b. Marcar tudo — funcionário sem notificações (deve retornar sucesso mesmo assim)
+PATCH {{url_base}}/notificacoes-logistica/ler-tudo/99999
+Authorization: Bearer {{token}}
+
+### 5c. Marcar todas sem token (erro esperado 401)
+PATCH {{url_base}}/notificacoes-logistica/ler-tudo/{{funcionario_id}}
+
+# ─────────────────────────────────────────────
+# 6. EXCLUIR NOTIFICAÇÃO
+# ─────────────────────────────────────────────
+
+### 6a. Excluir notificação
+DELETE {{url_base}}/notificacoes-logistica/{{notificacao_id}}
+Authorization: Bearer {{token}}
+
+### 6b. Excluir notificação inexistente (erro esperado 404)
+DELETE {{url_base}}/notificacoes-logistica/99999
+Authorization: Bearer {{token}}
+
+### 6c. Excluir sem token (erro esperado 401)
+DELETE {{url_base}}/notificacoes-logistica/{{notificacao_id}}
+
+# ─────────────────────────────────────────────
+# 7. FLUXO COMPLETO — CICLO DE VIDA
+# ─────────────────────────────────────────────
+# Sequência sugerida para testar a integração ponta a ponta:
+#
+# 1. POST /kanban/boards/logistica/cards       → cria card → dispara "Novo Card"
+# 2. GET  /notificacoes-logistica/{{funcionario_id}} → verifica notificação gerada
+# 3. PATCH /kanban/boards/logistica/cards/{id} → move para "entregue" → dispara "Entrega Confirmada"
+# 4. GET  /notificacoes-logistica/{{funcionario_id}} → verifica segunda notificação
+# 5. POST /notificacoes-logistica/processar-atrasos → verifica alertas de atraso
+# 6. PATCH /notificacoes-logistica/ler/{{notificacao_id}} → marca como lida
+# 7. PATCH /notificacoes-logistica/ler-tudo/{{funcionario_id}} → limpa todas
+# 8. DELETE /notificacoes-logistica/{{notificacao_id}} → remove do histórico
