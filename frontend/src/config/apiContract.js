@@ -23,6 +23,14 @@ export const API_ENDPOINTS = {
         converter: (id) => `/clientes/${id}/converter`,
         arquivar: (id) => `/clientes/${id}/arquivar`,
     },
+     leads: {
+        listar: '/leads',
+        criar: '/leads',
+        buscarPorId: (id) => `/leads/${id}`,
+        atualizar: (id) => `/leads/${id}`,
+        converter: (id) => `/leads/${id}/converter`,
+        arquivar: (id) => `/leads/${id}/arquivar`,
+    },
     pedidos: {
         listar: '/pedidos',
         buscarPorId: (id) => `/pedidos/${id}`,
