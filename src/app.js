@@ -17,9 +17,12 @@ const pedidoRoutes = require('./routes/pedidoRoutes');
 const matrizRoutes = require('./routes/matrizRoutes');
 const arquiteturaRoutes = require('./routes/arquiteturaRoutes');
 const gerenciaRoutes = require('./routes/gerenciaRoutes');
+<<<<<<< HEAD
 const vendaRoutes = require('./routes/vendaRoutes');
 const kanbanRoutes = require('./routes/kanbanRoutes');
 const notificacoesLogisticaRoutes = require('./routes/notificacoes_logisticaRoutes');
+=======
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
 const { manipuladorErros, rotaNaoEncontrada } = require('./middlewares/erroMiddleware');
 
 const app = express();
@@ -48,6 +51,7 @@ app.use('/pedidos', pedidoRoutes);
 app.use('/matriz', matrizRoutes);
 app.use('/arquitetura', arquiteturaRoutes);
 app.use('/gerencia', gerenciaRoutes);
+<<<<<<< HEAD
 app.use('/vendas', vendaRoutes);
 app.use('/kanban', kanbanRoutes);
 app.use('/notificacoes-logistica', notificacoesLogisticaRoutes);
@@ -57,6 +61,14 @@ const PREFIXOS_API = [
     '/vendas', '/producao', '/pedidos', '/matriz', '/notificacoes-com',
     '/notificacoes-fin', '/notificacoes-arq', '/notificacoes-producao',
     '/notificacoes-gerencia', '/notificacoes-logistica', '/arquitetura', '/gerencia', '/kanban'
+=======
+
+const PREFIXOS_API = [
+    '/auth', '/funcionarios', '/permissoes', '/leads', '/clientes', '/crm', '/crmFinanceiro',
+    '/producao', '/pedidos', '/matriz', '/notificacoes-com',
+    '/notificacoes-fin', '/notificacoes-arq', '/notificacoes-producao',
+    '/notificacoes-gerencia', '/arquitetura', '/gerencia'
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
 ];
 
 app.use((req, res, next) => {

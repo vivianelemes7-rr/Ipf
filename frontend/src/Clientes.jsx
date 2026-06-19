@@ -26,6 +26,7 @@ const FORM_VAZIO = {
     telefone: '',
     cidade: '',
     estado: 'SP',
+<<<<<<< HEAD
     cpf_cnpj: '',
     endereco_completo: '',
     origem: 'Vendas',
@@ -34,6 +35,8 @@ const FORM_VAZIO = {
     indicacao: '',
     status_lead: 'Novo',
     notas: '',
+=======
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
     desde: '',
     pedidos: '',
     valorTotal: '',
@@ -141,15 +144,20 @@ function normalizarCliente(cliente) {
         nome_contato: cliente.nome_contato || '',
         empresa: cliente.empresa || '',
         origem: cliente.origem || '',
+<<<<<<< HEAD
          instagram: cliente.instagram || '',
         site: cliente.site || '',
         indicacao: cliente.indicacao || '',
         status_lead: cliente.status_lead || '',
         convertido: Boolean(cliente.convertido),
+=======
+        status_lead: cliente.status_lead || '',
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
         notas: cliente.notas || '',
         endereco_completo: cliente.endereco_completo || '',
     };
 }
+<<<<<<< HEAD
 function montarPayloadLead(formulario) {
     const cidade = formulario.cidade.trim();
     const estado = formulario.estado.trim();
@@ -184,6 +192,8 @@ function montarPayloadLead(formulario) {
         ].filter(Boolean).join(' | ') || null,
     };
 }
+=======
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
 
 function extrairListaClientes(resposta) {
     if (Array.isArray(resposta)) return resposta;
@@ -215,7 +225,11 @@ export default function Clientes() {
             setErroCarregamento('');
 
             try {
+<<<<<<< HEAD
                 const resposta = await requisicao(API_ENDPOINTS.leads.listar);
+=======
+                const resposta = await requisicao(API_ENDPOINTS.clientes.listar);
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
 
                 if (!estaMontado) return;
 
@@ -283,6 +297,7 @@ export default function Clientes() {
         return Object.keys(e).length === 0;
     };
 
+<<<<<<< HEAD
      const salvar = async () => {
         if (!validar()) return;
 
@@ -338,6 +353,44 @@ export default function Clientes() {
             console.error('Erro ao salvar lead:', erro);
             setErroCarregamento(erro.message || 'Não foi possível salvar o lead.');
         }
+=======
+    const salvar = () => {
+        if (!validar()) return;
+
+        const nivel = calcularNivel(form.desde, Number(form.pedidos));
+
+        if (editandoId !== null) {
+            setClientes(cs =>
+                cs.map(c =>
+                    c.id === editandoId
+                        ? {
+                            ...form,
+                            id: editandoId,
+                            pedidos: Number(form.pedidos),
+                            valorTotal: Number(form.valorTotal),
+                            nivel,
+                        }
+                        : c
+                )
+            );
+        } else {
+            setClientes(cs => [
+                ...cs,
+                {
+                    ...form,
+                    id: Date.now(),
+                    pedidos: Number(form.pedidos),
+                    valorTotal: Number(form.valorTotal),
+                    nivel,
+                },
+            ]);
+        }
+
+        setForm(FORM_VAZIO);
+        setErros({});
+        setEditandoId(null);
+        setAba('lista');
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
     };
 
     const iniciarEdicao = (c) => {
@@ -674,6 +727,7 @@ export default function Clientes() {
                                     ))}
                                 </select>
                             </div>
+<<<<<<< HEAD
                                                        <div>
                                 <label className="clientes-form-label">CPF / CNPJ</label>
                                 <input
@@ -765,6 +819,8 @@ export default function Clientes() {
                                     placeholder="Observações comerciais, perfil, interesse, urgência..."
                                 />
                             </div>
+=======
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
 
                             <div>
                                 <label className="clientes-form-label">Cliente desde *</label>
@@ -827,11 +883,19 @@ export default function Clientes() {
                         </div>
 
                         <div className="clientes-form-actions">
+<<<<<<< HEAD
                            <button type="button" onClick={salvar} className="clientes-btn-salvar">
                                 {editandoId ? '💾 Salvar Alterações' : '✅ Cadastrar Cliente'}
                             </button>
 
                            <button type="button" onClick={cancelarForm} className="clientes-btn-cancelar">
+=======
+                            <button onClick={salvar} className="clientes-btn-salvar">
+                                {editandoId ? '💾 Salvar Alterações' : '✅ Cadastrar Cliente'}
+                            </button>
+
+                            <button onClick={cancelarForm} className="clientes-btn-cancelar">
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
                                 Cancelar
                             </button>
                         </div>

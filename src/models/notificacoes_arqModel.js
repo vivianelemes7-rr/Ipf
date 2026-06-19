@@ -91,5 +91,8 @@ class NotificacaoArqModel {
         return rows;
     }
 }
+<<<<<<< HEAD
 
 module.exports = NotificacaoArqModel;
+=======
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da

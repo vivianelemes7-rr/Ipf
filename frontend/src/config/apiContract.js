@@ -3,6 +3,7 @@ export const API_ENDPOINTS = {
         login: '/auth/login',
     },
     kanban: {
+<<<<<<< HEAD
         boards: '/kanban/boards',
         boardCards: (boardKey) => {
             if (boardKey === 'vendedor') return '/leads/cadastrar';
@@ -12,6 +13,11 @@ export const API_ENDPOINTS = {
             if (boardKey === 'vendedor') return `/crm/${cardId}`;
             return `/kanban/boards/${boardKey}/cards/${cardId}`;
         },
+=======
+        boards: '/gerencia/kanban',
+        boardCard: (boardKey, cardId) => `/gerencia/kanban/cards/${cardId}`,
+        boardCards: (boardKey) => '/gerencia/kanban/cards',
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
     },
     gerencia: {
         kanban: '/gerencia/kanban',
@@ -29,6 +35,7 @@ export const API_ENDPOINTS = {
         converter: (id) => `/clientes/${id}/converter`,
         arquivar: (id) => `/clientes/${id}/arquivar`,
     },
+<<<<<<< HEAD
      leads: {
         listar: '/leads',
         criar: '/leads',
@@ -37,6 +44,8 @@ export const API_ENDPOINTS = {
         converter: (id) => `/leads/${id}/converter`,
         arquivar: (id) => `/leads/${id}/arquivar`,
     },
+=======
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
     pedidos: {
         listar: '/pedidos',
         buscarPorId: (id) => `/pedidos/${id}`,

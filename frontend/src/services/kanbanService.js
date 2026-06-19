@@ -23,6 +23,7 @@ function obterQuadrosMock() {
     return comVendedoresPadrao(CONFIGURACOES_QUADRO);
 }
 
+<<<<<<< HEAD
 /**
  * Normaliza a resposta da API do Kanban unificado.
  * O backend retorna { boards: { vendedor: {...}, arquitetura: {...}, ... } }
@@ -33,11 +34,89 @@ function normalizarColecaoQuadros(carga) {
 
     // Formato esperado: { boards: { ... } }
     const chaveBoards = API_FIELDS.commonEnvelope.boards;
+=======
+function normalizarCardGerencial(card) {
+    if (!card) return null;
+
+    const detalhes = Array.isArray(card.detalhes)
+        ? card.detalhes
+        : card.observacoes_gerenciais
+            ? String(card.observacoes_gerenciais).split('|').map((item) => item.trim()).filter(Boolean)
+            : [];
+
+    return {
+        id: card.id,
+        columnId: card.etapa_kanban || 'Pendente',
+        title: card.titulo || 'Card sem título',
+        lines: detalhes,
+        footer: card.observacoes_gerenciais || '',
+        seller: card.setor_origem || 'Gerencia',
+        processTag: card.tipo_card || 'Tarefa Interna',
+        prioridade: card.prioridade,
+        somenteLeitura: card.somenteLeitura || false,
+        indicadores: card.indicadores || null,
+        updatedAt: card.atualizado_em || card.updatedAt || null,
+        updatedByProfile: card.atualizado_por_perfil || card.updatedByProfile || null,
+        ...card,
+    };
+}
+
+function normalizarKanbanGerencial(dados) {
+    const etapas = dados?.etapas || [];
+    const cardsGerenciais = dados?.cardsGerenciais || [];
+    const resumosSetoriais = dados?.resumosSetoriais || [];
+
+    const columns = etapas.map((etapa) => ({
+        id: etapa,
+        title: etapa,
+        tone: etapa === 'Aprovado' ? 'success' : etapa === 'Em Andamento' ? 'accent' : 'neutral',
+    }));
+
+    const cards = [
+        ...resumosSetoriais,
+        ...cardsGerenciais,
+    ]
+        .map(normalizarCardGerencial)
+        .filter(Boolean);
+
+    return {
+        gerente: {
+            key: 'gerente',
+            label: 'Gerência',
+            title: 'Kanban Gerencial',
+            description: 'Acompanhamento de prioridades, decisões e aprovações da equipe.',
+            columns,
+            cards,
+        },
+    };
+}
+
+function normalizarColecaoQuadros(carga) {
+    if (!carga) return {};
+
+    if (carga.sucesso && carga.dados) {
+        return normalizarKanbanGerencial(carga.dados);
+    }
+
+    if (carga.dados?.etapas || carga.dados?.cardsGerenciais || carga.dados?.resumosSetoriais) {
+        return normalizarKanbanGerencial(carga.dados);
+    }
+
+    if (carga.etapas || carga.cardsGerenciais || carga.resumosSetoriais) {
+        return normalizarKanbanGerencial(carga);
+    }
+
+    const chaveBoards = API_FIELDS.commonEnvelope.boards;
+
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
     if (carga[chaveBoards] && typeof carga[chaveBoards] === 'object' && !Array.isArray(carga[chaveBoards])) {
         return carga[chaveBoards];
     }
 
+<<<<<<< HEAD
     // Formato array de quadros
+=======
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
     if (Array.isArray(carga[chaveBoards])) {
         return Object.fromEntries(carga[chaveBoards].map((quadro) => [quadro[API_FIELDS.board.key], quadro]));
     }
@@ -46,7 +125,10 @@ function normalizarColecaoQuadros(carga) {
         return Object.fromEntries(carga.map((quadro) => [quadro[API_FIELDS.board.key], quadro]));
     }
 
+<<<<<<< HEAD
     // Objeto direto já no formato correto
+=======
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
     if (typeof carga === 'object') {
         return carga;
     }
@@ -98,6 +180,10 @@ export async function atualizarColunaCardKanban(chaveQuadro, idCard, idColuna, m
             metodo: 'PATCH',
             corpo: {
                 [API_FIELDS.card.columnId]: idColuna,
+<<<<<<< HEAD
+=======
+                etapa_kanban: idColuna,
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
                 ...metadados,
             },
         });
@@ -112,6 +198,7 @@ export async function criarCardKanban(chaveQuadro, card) {
         return { success: true, card };
     }
 
+<<<<<<< HEAD
     // O quadro de vendedor usa um fluxo de 2 passos:
     // 1. Cria o lead em /leads/cadastrar
     // 2. Cria o card CRM em /crm com o lead_id obtido
@@ -119,6 +206,8 @@ export async function criarCardKanban(chaveQuadro, card) {
         return await criarCardVendedor(card);
     }
 
+=======
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
     try {
         return await requisicao(API_ENDPOINTS.kanban.boardCards(chaveQuadro), {
             metodo: 'POST',
@@ -130,6 +219,7 @@ export async function criarCardKanban(chaveQuadro, card) {
     }
 }
 
+<<<<<<< HEAD
 async function criarCardVendedor(card) {
     // Se o Kanban.jsx já criou o lead e passou o lead_id no card,
     // pula o passo 1 para evitar criação duplicada de lead.
@@ -184,6 +274,8 @@ async function criarCardVendedor(card) {
     }
 }
 
+=======
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
 export async function atualizarCardKanban(chaveQuadro, idCard, dadosCard) {
     if (DEVE_USAR_MOCKS) {
         return { success: true, card: { id: idCard, ...dadosCard } };

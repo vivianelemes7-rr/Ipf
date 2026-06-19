@@ -3,7 +3,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import './Kanban.css';
 import { PAPEIS_PERMITIDOS, QUADRO_PADRAO_POR_PAPEL } from './config/roles';
+<<<<<<< HEAD
 import { API_ENDPOINTS } from './config/apiContract';
+=======
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
 import {
     listarQuadrosKanban,
     atualizarColunaCardKanban,
@@ -11,7 +14,10 @@ import {
     atualizarCardKanban,
     excluirCardKanban,
 } from './services/kanbanService';
+<<<<<<< HEAD
 import { requisicao } from './services/httpClient';
+=======
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
 import {
     obterPapeisComAcessoAoQuadro,
     registrarNotificacaoMudancaEstado,
@@ -566,6 +572,7 @@ export default function Kanban() {
         return idsExistentes.length ? Math.max(...idsExistentes) + 1 : Date.now();
     };
 
+<<<<<<< HEAD
     const extrairCidadeEstado = (textoEndereco = '') => {
         const enderecoNormalizado = String(textoEndereco || '').trim();
         if (!enderecoNormalizado) {
@@ -653,6 +660,8 @@ export default function Kanban() {
 
         return leadId;
     };
+=======
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
     const aoSalvarNovoCard = async (evento) => {
         evento.preventDefault();
         definirErroNovoCard('');
@@ -683,6 +692,7 @@ export default function Kanban() {
             return;
         }
 
+<<<<<<< HEAD
         let leadId = null;
         if (chaveQuadroAtual === CHAVE_QUADRO_VENDEDOR) {
             try {
@@ -698,6 +708,8 @@ export default function Kanban() {
                 return;
             }
         }
+=======
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
         const idNovoCard = obterProximoIdCard();
         const novoCard = {
             id: idNovoCard,
@@ -714,7 +726,10 @@ export default function Kanban() {
             createdByProfile: perfilAtor,
             updatedByProfile: perfilAtor,
             updatedAt: new Date().toISOString(),
+<<<<<<< HEAD
             ...(leadId ? { lead_id: leadId } : {}),
+=======
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
         };
 
         definirSalvandoNovoCard(true);
@@ -884,7 +899,10 @@ export default function Kanban() {
             clientDocument: cardAtualizado.clientDocument,
             clientAddress: cardAtualizado.clientAddress,
             homologadoCliente: cardAtualizado.homologadoCliente,
+<<<<<<< HEAD
             ...(cardAtualizado.lead_id ? { lead_id: cardAtualizado.lead_id } : {}),
+=======
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
             updatedByProfile: cardAtualizado.updatedByProfile,
             updatedAt: cardAtualizado.updatedAt,
         });
