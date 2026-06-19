@@ -23,6 +23,18 @@ function obterQuadrosMock() {
     return comVendedoresPadrao(CONFIGURACOES_QUADRO);
 }
 
+<<<<<<< HEAD
+/**
+ * Normaliza a resposta da API do Kanban unificado.
+ * O backend retorna { boards: { vendedor: {...}, arquitetura: {...}, ... } }
+ * O frontend espera um objeto keyed por chave do quadro.
+ */
+function normalizarColecaoQuadros(carga) {
+    if (!carga) return {};
+
+    // Formato esperado: { boards: { ... } }
+    const chaveBoards = API_FIELDS.commonEnvelope.boards;
+=======
 function normalizarCardGerencial(card) {
     if (!card) return null;
 
@@ -96,10 +108,15 @@ function normalizarColecaoQuadros(carga) {
 
     const chaveBoards = API_FIELDS.commonEnvelope.boards;
 
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
     if (carga[chaveBoards] && typeof carga[chaveBoards] === 'object' && !Array.isArray(carga[chaveBoards])) {
         return carga[chaveBoards];
     }
 
+<<<<<<< HEAD
+    // Formato array de quadros
+=======
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
     if (Array.isArray(carga[chaveBoards])) {
         return Object.fromEntries(carga[chaveBoards].map((quadro) => [quadro[API_FIELDS.board.key], quadro]));
     }
@@ -108,6 +125,10 @@ function normalizarColecaoQuadros(carga) {
         return Object.fromEntries(carga.map((quadro) => [quadro[API_FIELDS.board.key], quadro]));
     }
 
+<<<<<<< HEAD
+    // Objeto direto já no formato correto
+=======
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
     if (typeof carga === 'object') {
         return carga;
     }
@@ -159,7 +180,10 @@ export async function atualizarColunaCardKanban(chaveQuadro, idCard, idColuna, m
             metodo: 'PATCH',
             corpo: {
                 [API_FIELDS.card.columnId]: idColuna,
+<<<<<<< HEAD
+=======
                 etapa_kanban: idColuna,
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
                 ...metadados,
             },
         });
@@ -174,6 +198,16 @@ export async function criarCardKanban(chaveQuadro, card) {
         return { success: true, card };
     }
 
+<<<<<<< HEAD
+    // O quadro de vendedor usa um fluxo de 2 passos:
+    // 1. Cria o lead em /leads/cadastrar
+    // 2. Cria o card CRM em /crm com o lead_id obtido
+    if (chaveQuadro === 'vendedor') {
+        return await criarCardVendedor(card);
+    }
+
+=======
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
     try {
         return await requisicao(API_ENDPOINTS.kanban.boardCards(chaveQuadro), {
             metodo: 'POST',
@@ -185,6 +219,63 @@ export async function criarCardKanban(chaveQuadro, card) {
     }
 }
 
+<<<<<<< HEAD
+async function criarCardVendedor(card) {
+    // Se o Kanban.jsx já criou o lead e passou o lead_id no card,
+    // pula o passo 1 para evitar criação duplicada de lead.
+    let leadId = card.lead_id ?? null;
+
+    if (!leadId) {
+        // Passo 1: criar o lead (fallback caso lead_id não venha no card)
+        try {
+            const payloadLead = {
+                nome_contato: card.title || '',
+                cpf_cnpj: card.clientDocument || '',
+                endereco_completo: card.clientAddress || '',
+                notas: Array.isArray(card.lines) ? card.lines.join('\n') : '',
+                origem: 'Kanban',
+                status_lead: 'Novo',
+                telefone: '',
+                email: '',
+            };
+            const respostaLead = await requisicao('/leads/cadastrar', {
+                metodo: 'POST',
+                corpo: payloadLead,
+            });
+            leadId = respostaLead?.id ?? respostaLead?.insertId ?? respostaLead?.lead_id ?? null;
+            if (!leadId) throw new Error('Lead criado mas ID não retornado pelo servidor.');
+        } catch (erro) {
+            console.warn('Falha ao criar lead para card de vendedor:', erro);
+            return { success: false, message: `Erro ao criar lead: ${erro.message}` };
+        }
+    }
+
+    // Passo 2: criar o card CRM com o lead_id
+    // Capitaliza a etapa para bater com os valores aceitos pelo backend
+    // ex: 'lead' → 'Lead', 'contato' → 'Contato'
+    const etapaRaw = card.columnId || 'Lead';
+    const etapaKanban = etapaRaw.charAt(0).toUpperCase() + etapaRaw.slice(1);
+
+    try {
+        const payloadCrm = {
+            lead_id: leadId,
+            etapa_kanban: etapaKanban,
+            observacoes_venda: Array.isArray(card.lines) ? card.lines.join(' | ') : (card.footer || ''),
+            prioridade: 2,
+        };
+        const respostaCrm = await requisicao('/crm', {
+            metodo: 'POST',
+            corpo: payloadCrm,
+        });
+        return respostaCrm;
+    } catch (erro) {
+        console.warn('Falha ao criar card CRM:', erro);
+        return { success: false, message: `Lead criado (id: ${leadId}), mas falha ao criar card CRM: ${erro.message}` };
+    }
+}
+
+=======
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
 export async function atualizarCardKanban(chaveQuadro, idCard, dadosCard) {
     if (DEVE_USAR_MOCKS) {
         return { success: true, card: { id: idCard, ...dadosCard } };

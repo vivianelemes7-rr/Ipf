@@ -1,0 +1,199 @@
+# Kanban Logística — /kanban/boards/logistica
+# Pré-requisito: @token com cargo Logistica ou Administrador
+# Obtenha o token em testeAutenticacao.rest
+
+@url_base = http://localhost:3000
+@token =
+@card_id = 1
+
+# ─────────────────────────────────────────────
+# 1. LISTAR TODOS OS BOARDS (inclui logística)
+# ─────────────────────────────────────────────
+
+### 1. Listar todos os boards do Kanban (inclui logistica)
+GET {{url_base}}/kanban/boards
+Authorization: Bearer {{token}}
+
+### Sem token (erro esperado 401)
+GET {{url_base}}/kanban/boards
+
+# ─────────────────────────────────────────────
+# 2. CRIAR CARD NA FILA DE LOGÍSTICA
+# ─────────────────────────────────────────────
+
+### 2a. Criar card — Pronto para Envio (caso normal)
+POST {{url_base}}/kanban/boards/logistica/cards
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "columnId": "pronto_envio",
+  "title": "Pedido #2026-099",
+  "lines": [
+    "Cliente: Empresa ABC Ltda",
+    "Nf: 001234",
+    "Transportadora: Correios",
+    "Tipo: Transportadora"
+  ],
+  "seller": "Marcos Silva",
+  "footer": "Aguardando coleta amanhã",
+  "processTag": "normal"
+}
+
+### 2b. Criar card — Especial (transportadora)
+POST {{url_base}}/kanban/boards/logistica/cards
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "columnId": "pronto_envio",
+  "title": "Pedido #2026-100",
+  "lines": [
+    "Cliente: Indústrias XYZ",
+    "Nf: 005678",
+    "Transportadora: Jadlog"
+  ],
+  "seller": "Ana Paula",
+  "footer": "Frete já contratado",
+  "processTag": "especial"
+}
+
+### 2c. Criar card — Em Expedição
+POST {{url_base}}/kanban/boards/logistica/cards
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "columnId": "expedicao",
+  "title": "Pedido #2026-088",
+  "lines": [
+    "Cliente: Construtora Delta",
+    "Nf: 000321",
+    "Transportadora: Braspress"
+  ],
+  "seller": "Carlos Lima",
+  "footer": "Saiu para entrega hoje",
+  "processTag": "normal"
+}
+
+### 2d. Criar card sem title (erro esperado — campo obrigatório pelo frontend)
+POST {{url_base}}/kanban/boards/logistica/cards
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "columnId": "pronto_envio",
+  "seller": "Vendedor Teste"
+}
+
+### 2e. Criar card em board inválido (erro esperado 400/404)
+POST {{url_base}}/kanban/boards/invalido/cards
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "columnId": "pronto_envio",
+  "title": "Teste board invalido"
+}
+
+# ─────────────────────────────────────────────
+# 3. MOVER CARD ENTRE COLUNAS (drag & drop)
+# ─────────────────────────────────────────────
+
+### 3a. Mover card para "Em Expedicao"
+PATCH {{url_base}}/kanban/boards/logistica/cards/{{card_id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "columnId": "expedicao"
+}
+
+### 3b. Mover card para "Entregue" (dispara notificação automática)
+PATCH {{url_base}}/kanban/boards/logistica/cards/{{card_id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "columnId": "entregue"
+}
+
+### 3c. Voltar card para "Pronto para Envio"
+PATCH {{url_base}}/kanban/boards/logistica/cards/{{card_id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "columnId": "pronto_envio"
+}
+
+### 3d. Coluna inválida (erro esperado — etapa não existente no mapa)
+PATCH {{url_base}}/kanban/boards/logistica/cards/{{card_id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "columnId": "coluna_inexistente"
+}
+
+### 3e. Card inexistente (erro esperado 404)
+PATCH {{url_base}}/kanban/boards/logistica/cards/99999
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "columnId": "entregue"
+}
+
+# ─────────────────────────────────────────────
+# 4. ATUALIZAR CAMPOS DO CARD
+# ─────────────────────────────────────────────
+
+### 4a. Atualizar título e rodapé
+PATCH {{url_base}}/kanban/boards/logistica/cards/{{card_id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Pedido #2026-099 — REVISADO",
+  "footer": "Coleta remarcada para amanhã às 14h"
+}
+
+### 4b. Atualizar vendedor e tag de processo
+PATCH {{url_base}}/kanban/boards/logistica/cards/{{card_id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "seller": "João Souza",
+  "processTag": "especial"
+}
+
+### 4c. Atualizar linhas de detalhe
+PATCH {{url_base}}/kanban/boards/logistica/cards/{{card_id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "lines": [
+    "Cliente: Empresa ABC Ltda",
+    "Nf: 001234 — ATUALIZADA",
+    "Transportadora: Sequoia",
+    "Tipo: Transportadora"
+  ]
+}
+
+# ─────────────────────────────────────────────
+# 5. EXCLUIR CARD
+# ─────────────────────────────────────────────
+
+### 5a. Excluir card de logística
+DELETE {{url_base}}/kanban/boards/logistica/cards/{{card_id}}
+Authorization: Bearer {{token}}
+
+### 5b. Excluir card inexistente (erro esperado 404)
+DELETE {{url_base}}/kanban/boards/logistica/cards/99999
+Authorization: Bearer {{token}}
+
+### 5c. Excluir sem token (erro esperado 401)
+DELETE {{url_base}}/kanban/boards/logistica/cards/{{card_id}}

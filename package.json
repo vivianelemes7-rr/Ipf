@@ -1,7 +1,13 @@
 {
   "scripts": {
     "build": "cd frontend && npm install && npm run build",
+<<<<<<< HEAD
+    "start": "node server.js",
+    "db:migrate": "node ./src/database/runMigrations.js",
+    "db:seed": "RUN_SEED=true node ./src/database/runMigrations.js"
+=======
     "start": "node server.js"
+>>>>>>> f95ee95a233b645bb4f881cfe14ebc2f4656b1da
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
