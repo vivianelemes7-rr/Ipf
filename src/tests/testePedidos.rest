@@ -1,0 +1,105 @@
+# Pedidos — /pedidos
+# Pré-requisitos:
+# - @token_vendas com módulo vendas ou cargo Gerente para criar/atualizar
+# - @token_financeiro com módulo financeiro ou cargo Gerente para avançar
+# - @token_producao com módulo produção ou cargo Gerente para finalizar
+# - Cancelamento exige Gerente ou permissão pode_forcar_transicao
+
+@url_base = http://localhost:3000
+@token_vendas = 
+@token_financeiro = 
+@token_producao =
+@token_gerente =
+@pedido_id = 1
+@lead_id = 2
+
+### Listar pedidos
+GET {{url_base}}/pedidos
+Authorization: Bearer {{token_vendas}}
+
+### Listar pedidos por status
+GET {{url_base}}/pedidos?status_pedido=Em Processamento
+Authorization: Bearer {{token_vendas}}
+
+### Listar pedidos com filtros do painel
+GET {{url_base}}/pedidos?status_pedido=Producao&cliente=Rocha&vendedor_id=1&tipo_pedido=Normal&data_inicio=2026-05-01&data_fim=2026-05-31
+Authorization: Bearer {{token_vendas}}
+
+### Buscar pedido por ID
+GET {{url_base}}/pedidos/{{pedido_id}}
+Authorization: Bearer {{token_vendas}}
+
+### Criar pedido Normal
+POST {{url_base}}/pedidos
+Authorization: Bearer {{token_vendas}}
+Content-Type: application/json
+
+{
+  "lead_id": {{lead_id}},
+  "numero_pedido": "PV-2026-002",
+  "tipo_pedido": "Normal",
+  "valor_total_fechado": 25000,
+  "descricao_itens_servicos": "Pedido normal de teste2",
+  "prazo_entrega_acordado": 15,
+  "contrato_url": null,
+  "projeto_referencia_url": null
+}
+
+### Criar pedido Especial
+POST {{url_base}}/pedidos
+Authorization: Bearer {{token_vendas}}
+Content-Type: application/json
+
+{
+  "lead_id": {{lead_id}},
+  "numero_pedido": "PV-2026-002",
+  "tipo_pedido": "Especial",
+  "valor_total_fechado": 25000,
+  "descricao_itens_servicos": "Pedido especial com matriz",
+  "prazo_entrega_acordado": 30,
+  "contrato_url": null,
+  "projeto_referencia_url": null
+}
+
+### Venda ganha gerando pedido e financeiro
+PATCH {{url_base}}/crm/1/ganho
+Authorization: Bearer {{token_vendas}}
+Content-Type: application/json
+
+{
+  "numero_pedido": "PV-2026-CRM-001",
+  "tipo_pedido": "Especial"
+}
+
+### Criar pedido sem numero_pedido (erro esperado 400)
+POST {{url_base}}/pedidos
+Authorization: Bearer {{token_vendas}}
+Content-Type: application/json
+
+{
+  "lead_id": {{lead_id}},
+  "tipo_pedido": "Normal",
+  "valor_total_fechado": 1000
+}
+
+### Atualizar pedido
+PUT {{url_base}}/pedidos/{{pedido_id}}
+Authorization: Bearer {{token_vendas}}
+Content-Type: application/json
+
+{
+  "descricao_itens_servicos": "Descrição atualizada",
+  "prazo_entrega_acordado": 20
+}
+
+### Avançar pedido após liberação financeira
+PATCH {{url_base}}/pedidos/{{pedido_id}}/avancar
+Authorization: Bearer {{token_financeiro}}
+
+### Cancelar pedido aprovado por gerente/permissão forte
+PATCH {{url_base}}/pedidos/{{pedido_id}}/cancelar
+Authorization: Bearer {{token_gerente}}
+
+### Finalizar pedido
+PATCH {{url_base}}/pedidos/{{pedido_id}}/finalizar
+Authorization: Bearer {{token_producao}}
