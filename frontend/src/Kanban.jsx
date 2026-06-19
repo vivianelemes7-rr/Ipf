@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import './Kanban.css';
 import { PAPEIS_PERMITIDOS, QUADRO_PADRAO_POR_PAPEL } from './config/roles';
+import { API_ENDPOINTS } from './config/apiContract';
 import {
     listarQuadrosKanban,
     atualizarColunaCardKanban,
@@ -10,6 +11,7 @@ import {
     atualizarCardKanban,
     excluirCardKanban,
 } from './services/kanbanService';
+import { requisicao } from './services/httpClient';
 import {
     obterPapeisComAcessoAoQuadro,
     registrarNotificacaoMudancaEstado,
@@ -564,6 +566,93 @@ export default function Kanban() {
         return idsExistentes.length ? Math.max(...idsExistentes) + 1 : Date.now();
     };
 
+    const extrairCidadeEstado = (textoEndereco = '') => {
+        const enderecoNormalizado = String(textoEndereco || '').trim();
+        if (!enderecoNormalizado) {
+            return { cidade: null, estado: null };
+        }
+
+        const partes = enderecoNormalizado.split('-').map((parte) => parte.trim()).filter(Boolean);
+        if (partes.length < 2) {
+            return { cidade: enderecoNormalizado, estado: null };
+        }
+
+        const estado = partes[partes.length - 1].toUpperCase();
+        const cidade = partes.slice(0, -1).join(' - ').trim();
+        const estadoValido = /^[A-Z]{2}$/.test(estado) ? estado : null;
+
+        return {
+            cidade: cidade || null,
+            estado: estadoValido,
+        };
+    };
+
+    const extrairNomeContatoCard = (tituloCard = '', linhasDetalhes = []) => {
+        const tituloSemPrefixo = String(tituloCard).replace(/^Lead\s*:\s*/i, '').trim();
+        if (tituloSemPrefixo) {
+            return tituloSemPrefixo;
+        }
+
+        const linhaContato = linhasDetalhes.find((linha) => /^Contato\s*:/i.test(linha || ''));
+        if (linhaContato) {
+            return linhaContato.replace(/^Contato\s*:/i, '').trim();
+        }
+
+        return 'Lead sem nome';
+    };
+
+    const extrairOrigemCard = (rodape = '') => {
+        const texto = String(rodape || '').trim();
+        if (!texto) return 'Vendas';
+
+        const correspondencia = texto.match(/Origem\s*:\s*(.+)$/i);
+        return correspondencia?.[1]?.trim() || 'Vendas';
+    };
+
+    const criarLeadParaCardVendas = async ({ tituloCard, linhasDetalhes, rodapeCard, enderecoCliente, documentoCliente }) => {
+        const nomeContato = extrairNomeContatoCard(tituloCard, linhasDetalhes);
+        const { cidade, estado } = extrairCidadeEstado(enderecoCliente);
+        const origem = extrairOrigemCard(rodapeCard);
+
+        const payloadLead = {
+            nome_contato: nomeContato,
+            empresa: nomeContato,
+            cpf_cnpj: documentoCliente || null,
+            telefone: null,
+            email: null,
+            endereco_completo: enderecoCliente || null,
+            cidade,
+            estado,
+            origem,
+            instagram: null,
+            site: null,
+            indicacao: null,
+            status_lead: 'Novo',
+            convertido: false,
+            notas: [
+                `Criado automaticamente no Kanban de vendas por ${perfilAtor}.`,
+                ...linhasDetalhes,
+                rodapeCard,
+            ].filter(Boolean).join(' | '),
+        };
+
+        const respostaLead = await requisicao(API_ENDPOINTS.leads.criar, {
+            metodo: 'POST',
+            corpo: payloadLead,
+        });
+
+        const leadId = respostaLead?.id
+            ?? respostaLead?.lead_id
+            ?? respostaLead?.leadId
+            ?? respostaLead?.lead?.id
+            ?? null;
+
+        if (!leadId) {
+            throw new Error('O backend nao retornou o id do lead criado.');
+        }
+
+        return leadId;
+    };
     const aoSalvarNovoCard = async (evento) => {
         evento.preventDefault();
         definirErroNovoCard('');
@@ -594,6 +683,20 @@ export default function Kanban() {
             return;
         }
 
+        let leadId = null;
+        if (chaveQuadroAtual === CHAVE_QUADRO_VENDEDOR) {
+            try {
+                leadId = await criarLeadParaCardVendas({
+                    tituloCard: dadosNovoCard.title.trim(),
+                    linhasDetalhes,
+                    rodapeCard: dadosNovoCard.footer.trim(),
+                    enderecoCliente: dadosNovoCard.clientAddress.trim(),
+                    documentoCliente: dadosNovoCard.clientDocument.trim(),
+                });
+            } catch (erro) {
+                definirErroNovoCard(erro.message || 'Nao foi possivel criar o lead antes do card.');
+                return;
+            }
         const idNovoCard = obterProximoIdCard();
         const novoCard = {
             id: idNovoCard,
@@ -610,6 +713,7 @@ export default function Kanban() {
             createdByProfile: perfilAtor,
             updatedByProfile: perfilAtor,
             updatedAt: new Date().toISOString(),
+            ...(leadId ? { lead_id: leadId } : {}),
         };
 
         definirSalvandoNovoCard(true);
@@ -779,6 +883,7 @@ export default function Kanban() {
             clientDocument: cardAtualizado.clientDocument,
             clientAddress: cardAtualizado.clientAddress,
             homologadoCliente: cardAtualizado.homologadoCliente,
+            ...(cardAtualizado.lead_id ? { lead_id: cardAtualizado.lead_id } : {}),
             updatedByProfile: cardAtualizado.updatedByProfile,
             updatedAt: cardAtualizado.updatedAt,
         });
