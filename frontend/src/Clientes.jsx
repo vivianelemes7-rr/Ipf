@@ -26,6 +26,14 @@ const FORM_VAZIO = {
     telefone: '',
     cidade: '',
     estado: 'SP',
+    cpf_cnpj: '',
+    endereco_completo: '',
+    origem: 'Vendas',
+    instagram: '',
+    site: '',
+    indicacao: '',
+    status_lead: 'Novo',
+    notas: '',
     desde: '',
     pedidos: '',
     valorTotal: '',
@@ -133,9 +141,47 @@ function normalizarCliente(cliente) {
         nome_contato: cliente.nome_contato || '',
         empresa: cliente.empresa || '',
         origem: cliente.origem || '',
+         instagram: cliente.instagram || '',
+        site: cliente.site || '',
+        indicacao: cliente.indicacao || '',
         status_lead: cliente.status_lead || '',
+        convertido: Boolean(cliente.convertido),
         notas: cliente.notas || '',
         endereco_completo: cliente.endereco_completo || '',
+    };
+}
+function montarPayloadLead(formulario) {
+    const cidade = formulario.cidade.trim();
+    const estado = formulario.estado.trim();
+    const nomeContato = formulario.nome.trim();
+    const email = formulario.email.trim().toLowerCase();
+    const telefone = formulario.telefone.trim();
+    const enderecoCompleto = formulario.endereco_completo.trim();
+    const origem = formulario.origem.trim() || 'Vendas';
+    const notas = formulario.notas.trim();
+
+    return {
+        nome_contato: nomeContato,
+        empresa: nomeContato,
+        cpf_cnpj: formulario.cpf_cnpj.trim() || null,
+        telefone,
+        email,
+        endereco_completo: enderecoCompleto || (cidade && estado ? `${cidade} - ${estado}` : cidade || null),
+        cidade,
+        estado,
+        origem,
+        instagram: formulario.instagram.trim() || null,
+        site: formulario.site.trim() || null,
+        indicacao: formulario.indicacao.trim() || null,
+        data_cadastro: formulario.desde ? new Date(formulario.desde).toISOString() : new Date().toISOString(),
+        status_lead: formulario.status_lead || 'Novo',
+        convertido: false,
+        notas: [
+            notas,
+            formulario.pedidos ? `Pedidos: ${formulario.pedidos}` : '',
+            formulario.valorTotal ? `Valor total: R$ ${Number(formulario.valorTotal).toLocaleString('pt-BR')}` : '',
+            formulario.nivel ? `Nível: ${formulario.nivel}` : '',
+        ].filter(Boolean).join(' | ') || null,
     };
 }
 
@@ -169,7 +215,7 @@ export default function Clientes() {
             setErroCarregamento('');
 
             try {
-                const resposta = await requisicao(API_ENDPOINTS.clientes.listar);
+                const resposta = await requisicao(API_ENDPOINTS.leads.listar);
 
                 if (!estaMontado) return;
 
@@ -237,42 +283,61 @@ export default function Clientes() {
         return Object.keys(e).length === 0;
     };
 
-    const salvar = () => {
+     const salvar = async () => {
         if (!validar()) return;
 
         const nivel = calcularNivel(form.desde, Number(form.pedidos));
+        const payloadLead = montarPayloadLead(form);
+         
+         try {
+            if (editandoId !== null) {
+                const resposta = await requisicao(API_ENDPOINTS.leads.atualizar(editandoId), {
+                    metodo: 'PUT',
+                    corpo: payloadLead,
+                });
 
-        if (editandoId !== null) {
-            setClientes(cs =>
-                cs.map(c =>
-                    c.id === editandoId
-                        ? {
-                            ...form,
-                            id: editandoId,
-                            pedidos: Number(form.pedidos),
-                            valorTotal: Number(form.valorTotal),
-                            nivel,
-                        }
-                        : c
-                )
-            );
-        } else {
-            setClientes(cs => [
-                ...cs,
-                {
-                    ...form,
-                    id: Date.now(),
-                    pedidos: Number(form.pedidos),
-                    valorTotal: Number(form.valorTotal),
-                    nivel,
-                },
-            ]);
-        }
+                const leadAtualizado = normalizarCliente(resposta || { ...payloadLead, id: editandoId });
 
-        setForm(FORM_VAZIO);
+                setClientes((cs) =>
+                    cs.map((c) =>
+                        c.id === editandoId
+                            ? {
+                                ...c,
+                                ...leadAtualizado,
+                                id: editandoId,
+                                pedidos: Number(form.pedidos),
+                                valorTotal: Number(form.valorTotal),
+                                nivel,
+                            }
+                            : c
+                    )
+                );
+            } else {
+                const resposta = await requisicao(API_ENDPOINTS.leads.criar, {
+                    metodo: 'POST',
+                    corpo: payloadLead,
+                });
+
+                const leadCriado = normalizarCliente(resposta || payloadLead);
+
+                setClientes((cs) => [
+                    ...cs,
+                    {
+                        ...leadCriado,
+                        pedidos: Number(form.pedidos),
+                        valorTotal: Number(form.valorTotal),
+                        nivel,
+                    },
+                ]);
+            }
+
         setErros({});
-        setEditandoId(null);
-        setAba('lista');
+            setEditandoId(null);
+            setAba('lista');
+        } catch (erro) {
+            console.error('Erro ao salvar lead:', erro);
+            setErroCarregamento(erro.message || 'Não foi possível salvar o lead.');
+        }
     };
 
     const iniciarEdicao = (c) => {
@@ -609,6 +674,97 @@ export default function Clientes() {
                                     ))}
                                 </select>
                             </div>
+                                                       <div>
+                                <label className="clientes-form-label">CPF / CNPJ</label>
+                                <input
+                                    name="cpf_cnpj"
+                                    value={form.cpf_cnpj}
+                                    onChange={handleChange}
+                                    className={inputClass('cpf_cnpj')}
+                                    placeholder="000.000.000-00 ou 00.000.000/0001-00"
+                                />
+                            </div>
+
+                            <div className="clientes-form-full">
+                                <label className="clientes-form-label">Endereço completo</label>
+                                <input
+                                    name="endereco_completo"
+                                    value={form.endereco_completo}
+                                    onChange={handleChange}
+                                    className={inputClass('endereco_completo')}
+                                    placeholder="Rua, número, bairro, cidade - UF"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="clientes-form-label">Origem</label>
+                                <input
+                                    name="origem"
+                                    value={form.origem}
+                                    onChange={handleChange}
+                                    className={inputClass('origem')}
+                                    placeholder="Ex: Vendas, Instagram, Indicação"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="clientes-form-label">Status do lead</label>
+                                <select
+                                    name="status_lead"
+                                    value={form.status_lead}
+                                    onChange={handleChange}
+                                    className={`${inputClass('status_lead')} clientes-form-select`}
+                                >
+                                    <option value="Novo">Novo</option>
+                                    <option value="Qualificado">Qualificado</option>
+                                    <option value="Descartado">Descartado</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="clientes-form-label">Instagram</label>
+                                <input
+                                    name="instagram"
+                                    value={form.instagram}
+                                    onChange={handleChange}
+                                    className={inputClass('instagram')}
+                                    placeholder="@perfil"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="clientes-form-label">Site</label>
+                                <input
+                                    name="site"
+                                    value={form.site}
+                                    onChange={handleChange}
+                                    className={inputClass('site')}
+                                    placeholder="https://..."
+                                />
+                            </div>
+
+                            <div>
+                                <label className="clientes-form-label">Indicação</label>
+                                <input
+                                    name="indicacao"
+                                    value={form.indicacao}
+                                    onChange={handleChange}
+                                    className={inputClass('indicacao')}
+                                    placeholder="Quem indicou o lead"
+                                />
+                            </div>
+
+                            <div className="clientes-form-full">
+                                <label className="clientes-form-label">Notas</label>
+                                <textarea
+                                    name="notas"
+                                    value={form.notas}
+                                    onChange={handleChange}
+                                    className={inputClass('notas')}
+                                    rows="4"
+                                    placeholder="Observações comerciais, perfil, interesse, urgência..."
+                                />
+                            </div>
 
                             <div>
                                 <label className="clientes-form-label">Cliente desde *</label>
@@ -671,11 +827,11 @@ export default function Clientes() {
                         </div>
 
                         <div className="clientes-form-actions">
-                            <button onClick={salvar} className="clientes-btn-salvar">
+                           <button type="button" onClick={salvar} className="clientes-btn-salvar">
                                 {editandoId ? '💾 Salvar Alterações' : '✅ Cadastrar Cliente'}
                             </button>
 
-                            <button onClick={cancelarForm} className="clientes-btn-cancelar">
+                           <button type="button" onClick={cancelarForm} className="clientes-btn-cancelar"
                                 Cancelar
                             </button>
                         </div>
